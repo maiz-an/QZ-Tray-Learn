@@ -1,0 +1,28 @@
+{
+  "name": "qz-tray-learn",
+  "version": "1.0.0",
+  "description": "A minimal, open-source Express + QZ Tray example: connect, list printers, and silently print an 80mm test receipt.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "qz-tray",
+    "printing",
+    "receipt-printer",
+    "pos",
+    "80mm",
+    "thermal-printer",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
