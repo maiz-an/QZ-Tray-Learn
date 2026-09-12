@@ -1,15 +1,15 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Request, Response } from "express";
 import crypto from "node:crypto";
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req: Request, res: Response) {
   const request = String(req.query.request ?? "");
 
   if (!request) {
     return res.status(400).type("text/plain").send("Missing request parameter");
   }
 
-  const privateKey = process.env.QZ_PRIVATE_KEY;
-  if (!privateKey) {
+  const rawKey = process.env.QZ_PRIVATE_KEY;
+  if (!rawKey) {
     return res
       .status(500)
       .type("text/plain")
@@ -20,9 +20,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    /* Vercel env vars preserve real newlines, but some paste tools
-       escape them — normalize both cases. */
-    const key = privateKey.replace(/\\n/g, "\n");
+    /* Some Vercel UIs flatten multiline values — unescape if needed. */
+    const key = rawKey.replace(/\\n/g, "\n");
 
     const signer = crypto.createSign("RSA-SHA512");
     signer.update(request);
