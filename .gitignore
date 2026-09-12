@@ -1,19 +1,12 @@
-# Dependencies
 node_modules/
+dist/
+.vite/
+.vercel/
 
-# Secrets — never commit your real QZ Tray key pair
-certs/*.pem
-certs/*.pfx
-certs/*.txt
-certs/*.crt
-!certs/README.md
-
-# Env
+certs/
 .env
 .env.local
+.env.*.local
 
-# OS / editor cruft
-.DS_Store
-Thumbs.db
 *.log
-npm-debug.log*
+.DS_Store
