@@ -1,14 +1,20 @@
 # QZ-Tray-Learn
 
 A complete, well-commented learning example for **[QZ Tray](https://qz.io)**:
-connect from the browser, list installed printers, and **silently** print
-an 80mm thermal receipt — no "Allow / Block" popup after the first
-handshake — using a signed certificate and a tiny Express backend.
+connect from the browser, list installed printers, and **silently** print an
+80mm **receipt** or a kitchen/order **ticket** — no "Allow / Block" popup
+after the first handshake — using a signed certificate.
 
-Fork it, edit `receipt-config.js`, and you have a working receipt printer
-for your own POS, kiosk, or restaurant project in minutes.
+Built as a **React + Vite + TypeScript + Tailwind** single-page app, backed
+by a tiny signing server that runs either as a local **Express** process or
+as **Vercel serverless functions**, so the same codebase works on your
+laptop and in production without changes.
 
-**Repo:** <https://github.com/maiz-an/QZ-Tray-Learn.git>
+Fork it, edit `src/config/receipt-config.ts`, and you have a working
+receipt/ticket printer for your own POS, kiosk, or restaurant project in
+minutes.
+
+**Repo:** <https://github.com/maiz-an/QZ-Tray-Learn>
 
 ![status](https://img.shields.io/badge/status-learning%20project-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -24,13 +30,13 @@ for your own POS, kiosk, or restaurant project in minutes.
 5. [QZ Tray — install and verify](#qz-tray--install-and-verify)
 6. [Certificate setup (for silent printing)](#certificate-setup-for-silent-printing)
 7. [Running the app](#running-the-app)
-8. [Using the app — every button explained](#using-the-app--every-button-explained)
+8. [Using the app](#using-the-app)
 9. [Testing without a real printer](#testing-without-a-real-printer)
-10. [Customizing the receipt](#customizing-the-receipt)
+10. [Customizing the receipt and ticket](#customizing-the-receipt-and-ticket)
 11. [Environment variables](#environment-variables)
 12. [How the code works (behind the scenes)](#how-the-code-works-behind-the-scenes)
 13. [Troubleshooting](#troubleshooting)
-14. [Deploying to production](#deploying-to-production)
+14. [Deploying to production (Vercel)](#deploying-to-production-vercel)
 15. [Security notes](#security-notes)
 16. [License](#license)
 
@@ -38,34 +44,91 @@ for your own POS, kiosk, or restaurant project in minutes.
 
 ## What this project teaches
 
-- **What QZ Tray is** and why a browser can't talk to a USB printer on its own
+- **What QZ Tray is** and why a browser can't talk to a USB/network printer
+  on its own
 - **How silent printing works** (certificate + signed requests)
 - **How to generate a free local certificate** with QZ Tray's Site Manager
-- **How to build an 80mm receipt** with HTML/CSS that prints correctly on a
-  thermal printer, including bilingual (English + Arabic) content
-- **How to print from the browser through a tiny Express backend** that keeps
-  the private key off the client
+- **How to build 80mm print layouts** with HTML/CSS — a customer-facing
+  **receipt** (with prices) and a kitchen-facing **order ticket** (no
+  prices) — including bilingual (English + Arabic) content
+- **How to print from the browser through a signing backend** that keeps
+  the private key off the client, with one codebase that runs as either a
+  local Express server or Vercel serverless functions
+- **How to build a live, full-size print preview** in an iframe before
+  committing anything to paper
 - **How to test without a physical printer** using *Microsoft Print to PDF*
 
 ---
 
 ## What's in the box
 
-```
-qz-tray-learn/
-├── server.js                  # Express: serves the page, hands out the
-│                              # public cert, and signs QZ requests
-├── public/                    # Everything the browser loads
-│   ├── index.html             # The console UI (connect, list, preview, print)
-│   ├── receipt-config.js      # ← edit this first — business, items, font, etc.
-│   └── receipt-template.js    # Renders config into HTML that QZ prints
-├── certs/                     # Your QZ Tray key pair goes here (git-ignored)
+```text
+QZ-Tray-Learn/
+├── index.html                 # Vite entry HTML — loads qz-tray.js from CDN
+├── src/
+│   ├── main.tsx                # React root; registers QZ security handlers
+│   ├── App.tsx                  # Top-level layout & state (connect, print, preview)
+│   ├── index.css                # Tailwind base + custom theme utilities
+│   │
+│   ├── components/
+│   │   ├── Header.tsx            # Page title / branding
+│   │   ├── Background.tsx        # Decorative animated background
+│   │   ├── GitHubLink.tsx        # "View source" badge
+│   │   ├── ActionButtons.tsx     # reconnect_qz / scan_printers
+│   │   ├── PrinterPanel.tsx      # Printer list + receipt/ticket printer pickers
+│   │   ├── PrintCards.tsx        # Preview + print buttons for receipt & ticket
+│   │   ├── PreviewModal.tsx      # Full-size, scrollable print preview (iframe)
+│   │   ├── InfoPanel.tsx         # How-it-works / help panel
+│   │   ├── Toasts.tsx            # Toast notification stack
+│   │   └── ui.tsx                # Shared small UI primitives (Button, etc.)
+│   │
+│   ├── config/
+│   │   ├── receipt-config.ts     # ← edit this first — business, items, style, ticket
+│   │   └── types.ts              # TypeScript shape of the config above
+│   │
+│   ├── templates/
+│   │   ├── receipt-template.ts   # Renders config → full receipt HTML (buildReceiptHtml)
+│   │   ├── ticket-template.ts    # Renders config → full ticket HTML (buildTicketHtml)
+│   │   └── shared.ts             # HTML helpers shared by both templates
+│   │
+│   ├── hooks/
+│   │   ├── useQz.ts              # Connect / list printers / print, with toasts
+│   │   ├── useToast.ts           # Toast state
+│   │   └── useLocalStorage.ts    # Generic localStorage-backed state
+│   │
+│   ├── lib/
+│   │   ├── qz.ts                 # QZ Tray security setup, connect, print pipeline
+│   │   ├── storage.ts            # Persist chosen receipt/ticket printer
+│   │   └── utils.ts              # Small shared helpers (sleep, cn, etc.)
+│   │
+│   └── types/
+│       └── qz.d.ts               # Type definitions for the global `qz` object
+│
+├── server/
+│   └── index.ts                 # Local Express server (dev + `npm start`)
+├── server.js                    # Compiled/plain JS entry used by some hosts
+│
+├── api/                          # Vercel serverless functions (production)
+│   ├── cert.ts                   # GET /api/cert   → serves QZ_CERTIFICATE
+│   ├── sign.ts                   # GET /api/sign    → signs a QZ request
+│   └── logo.ts                   # GET /api/logo    → proxies LOGO_URL as base64
+│
+├── certs/                        # Your QZ Tray key pair goes here (git-ignored)
 │   ├── digital-certificate.txt
-│   └── private-key.pem
-├── .env.example               # Optional env overrides
-├── .gitignore                 # Already ignores node_modules/, certs/, .env
+│   ├── private-key.pem
+│   └── README.md
+│
+├── dist/                         # Production build output (git-ignored in practice)
+├── vercel.json                   # Rewrites /digital-certificate.txt, /sign-message,
+│                                  # /logo-base64 → the /api functions above
+├── vite.config.ts                # Vite + React plugin, "@/" path alias → src/
+├── tailwind.config.js            # Tailwind theme
+├── postcss.config.js
+├── tsconfig.json / tsconfig.node.json
+├── .env.example                  # Documents every supported env var
+├── .gitignore                    # Ignores node_modules/, dist/, certs/, .env*
 ├── package.json
-└── README.md                  # You are here
+└── README.md                     # You are here
 ```
 
 ---
@@ -78,8 +141,8 @@ qz-tray-learn/
 | **QZ Tray** | Any recent version | <https://qz.io/download/> |
 | **A printer** | Optional — Microsoft Print to PDF works | — |
 
-Node 18 is required because `server.js` uses the built-in `fetch()`
-(for the optional logo proxy).
+Node 18+ is required for the built-in `fetch()` used by the logo proxy and
+for the Vite/TypeScript toolchain.
 
 ---
 
@@ -89,26 +152,32 @@ Node 18 is required because `server.js` uses the built-in `fetch()`
 git clone https://github.com/maiz-an/QZ-Tray-Learn.git
 cd QZ-Tray-Learn
 npm install
-npm start
+npm run dev
 ```
 
-Then:
+`npm run dev` starts **both** processes at once (via `concurrently`):
+
+- the **Vite dev server** (the React UI) on <http://localhost:5173>
+- the **Express signing server** (`server/index.ts`) on <http://localhost:3000>
+
+Open **<http://localhost:5173>**, then:
 
 1. Make sure **QZ Tray is running** (system tray / menu bar — see the next
    section for how to check).
-2. Open **<http://localhost:3000>**.
-3. Click **reconnect_qz** — a green toast says "QZ Tray connected."
-4. Click **scan_printers** — your installed printers appear.
-5. Click **print_80mm ▸** on any printer.
+2. Click **↻ reconnect_qz** — a green toast says "QZ Tray connected."
+3. Click **↻ scan_printers** — your installed printers appear in the
+   **PRINTERS** panel.
+4. Assign a printer to **Receipt** and/or **Ticket**.
+5. Click **👁 preview** to see exactly what will print, or **print ▸** to
+   send it.
 
-If QZ Tray isn't running, step 3 will show a red toast
-"QZ Tray connection failed" — jump to
-[QZ Tray — install and verify](#qz-tray--install-and-verify).
+If QZ Tray isn't running, step 2 shows a warning toast "QZ Tray is not
+running" — jump to [QZ Tray — install and verify](#qz-tray--install-and-verify).
 
-**You will see an Allow/Block popup the first time.** That's expected —
-click **Allow**, check **Remember this decision**, and it never appears
-again. To get rid of it *without* even the first popup, set up a certificate
-(see [Certificate setup](#certificate-setup-for-silent-printing)).
+**You'll see an Allow/Block popup the first time you print.** That's
+expected — click **Allow**, check **Remember this decision**, and it never
+appears again. To skip that popup entirely, set up a certificate (see
+[Certificate setup](#certificate-setup-for-silent-printing)).
 
 ---
 
@@ -116,14 +185,12 @@ again. To get rid of it *without* even the first popup, set up a certificate
 
 ### What is QZ Tray?
 
-QZ Tray is a free desktop application that runs on the **same machine as the
-printer**. It opens a WebSocket server on `localhost` and exposes APIs that a
-web page can call to list printers and send print jobs — something a browser
-alone cannot do for security reasons.
+QZ Tray is a free desktop application that runs on the **same machine as
+the printer**. It opens a WebSocket server on `localhost:8182` and exposes
+APIs that a web page can call to list printers and send print jobs —
+something a browser alone cannot do for security reasons.
 
-The flow is:
-
-```
+```text
   Browser  ←→  QZ Tray (localhost WebSocket)  ←→  Your OS print spooler  ←→  Printer
 ```
 
@@ -147,20 +214,18 @@ The flow is:
 
 ### What happens if QZ Tray is not running?
 
-When you click **reconnect_qz** with QZ Tray stopped, you'll see:
+Clicking **reconnect_qz** with QZ Tray stopped shows:
 
-- A red toast: **"QZ Tray connection failed"** with a `websocket error` in
-  the details.
+- A warning toast: **"QZ Tray is not running"**
 - A console error: **`Failed to open WebSocket: ws://localhost:8182`**
-- The **TARGETS** panel stays empty.
+- The **PRINTERS** panel stays empty.
 
-**Fix:** start QZ Tray from the Start menu (Windows) or Applications
-(macOS). Then click **reconnect_qz** again. No need to reload the page.
+**Fix:** start QZ Tray, then click **reconnect_qz** again. No page reload
+needed.
 
-> **Tip:** QZ Tray opens port **8182** on `localhost`. If that port is
-> blocked by a firewall or another app is using it, connection will fail
-> even if QZ is running. Check with `netstat -an | findstr 8182` (Windows)
-> or `lsof -i :8182` (macOS/Linux).
+> **Tip:** QZ Tray opens port **8182** on `localhost`. If that's blocked by
+> a firewall, connection fails even if QZ is running. Check with
+> `netstat -an | findstr 8182` (Windows) or `lsof -i :8182` (macOS/Linux).
 
 ---
 
@@ -171,20 +236,22 @@ This is the most important section — read it if you want to understand
 
 ### Why you need a certificate
 
-By default, QZ Tray asks the user "Allow this website to use your printer?"
-**on every print**. That's a reasonable default (it stops a malicious page
-from printing 500 pages). For a POS or kiosk, it's unusable.
+By default, QZ Tray asks the user "Allow this website to use your
+printer?" **on every print**. That's a reasonable default (it stops a
+malicious page from printing 500 pages). For a POS or kiosk, it's
+unusable.
 
 The solution:
 
 1. You generate a **certificate** (public) + **private key** (secret).
 2. You tell QZ Tray to trust that certificate.
-3. For every print request, the page asks your server to **sign** the
+3. For every print request, the page asks the backend to **sign** the
    request with the private key.
 4. QZ Tray verifies the signature against the trusted certificate and
    silently lets it through.
 
-The private key **never touches the browser** — it stays on the server.
+The private key **never touches the browser** — it stays on the server
+(local Express) or in a serverless function's environment (Vercel).
 
 ### Generate a free certificate (2 minutes)
 
@@ -206,30 +273,35 @@ across all machines — e.g. for a public web app — see
    - `digital-certificate.txt` — the public certificate
    - `private-key.pem` — the private key
 
-### Install it in the project
+### Install it in the project (local dev)
 
 Copy both files into this project's `certs/` folder:
 
-```
-qz-tray-learn/
-├── certs/
-│   ├── digital-certificate.txt     ← from your Desktop
-│   └── private-key.pem             ← from your Desktop
+```text
+QZ-Tray-Learn/
+└── certs/
+    ├── digital-certificate.txt     ← from your Desktop
+    └── private-key.pem             ← from your Desktop
 ```
 
-Then **restart the server** (`Ctrl+C` in the terminal, then `npm start`) and
-reload the page. The popup will be gone.
+Then **restart the server** (`Ctrl+C`, then `npm run dev` again) and reload
+the page. The popup will be gone.
+
+For production (Vercel), see
+[Deploying to production](#deploying-to-production-vercel) — the same two
+files are provided as environment variables instead of files on disk.
 
 ### Verify it works
 
 Open DevTools → Network tab → reload the page. You should see:
 
-- `digital-certificate.txt` — status 200, contains the PEM certificate
-- Every print makes a request to `/sign-message?request=...` with status 200
+- `GET /digital-certificate.txt` (dev) or `GET /api/cert` (prod) — status
+  200, containing the PEM certificate
+- Every print makes a request to `/sign-message` (dev) or `/api/sign`
+  (prod) with status 200
 
-If `/digital-certificate.txt` returns 500, the file isn't in the right
-place. If `/sign-message` returns 500, `private-key.pem` is missing or
-corrupt.
+If it returns 500, the certificate/key isn't where the server expects it
+— see [Troubleshooting](#troubleshooting).
 
 ### 🔒 Keep your private key private
 
@@ -245,32 +317,35 @@ a password**.
 
 ## Running the app
 
-```bash
-npm start
-```
-
-Expected console output:
-
-```
-==========================================
- QZ-Tray-Learn
-==========================================
-
-Open: http://localhost:3000
-
-⚠️  No certs found in /certs — silent printing will fail.
-   See README.md → 'Generate your own certificate (free)'.
-```
-
-The warning disappears once `certs/` has both files.
-
-**Dev mode** — auto-restart on file changes:
+**Dev mode (recommended)** — Vite dev server + Express, both with
+hot-reload:
 
 ```bash
 npm run dev
 ```
 
-**Change the port:**
+This runs `npm:dev:server` (`tsx watch server/index.ts`, port `3000`) and
+`npm:dev:client` (`vite`, port `5173`) together via `concurrently`. Open
+**<http://localhost:5173>**.
+
+**Production-style, single process:**
+
+```bash
+npm run build   # tsc -b && vite build → outputs to dist/
+npm start       # tsx server/index.ts — serves dist/ + the sign/cert/logo routes
+```
+
+Open **<http://localhost:3000>**.
+
+**Other scripts:**
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm run preview     # vite preview (static preview of the dist/ build only,
+                     #   without the signing endpoints — printing will fail)
+```
+
+**Change the port** (affects the Express server):
 
 ```bash
 PORT=4000 npm start          # macOS / Linux
@@ -280,60 +355,56 @@ $env:PORT=4000; npm start    # Windows PowerShell
 
 ---
 
-## Using the app — every button explained
+## Using the app
 
-Open **<http://localhost:3000>**. You'll see three buttons at the top and a
-list of "targets" (printers) below.
+Open the app in your browser. You'll see connection controls at the top, a
+**PRINTERS** panel, and a **Print** section with a card each for the
+**Receipt** and the **Ticket**.
 
 ### `↻ reconnect_qz`
 
 1. Opens the WebSocket connection to QZ Tray (`ws://localhost:8182`).
 2. On success: shows a green toast "QZ Tray connected."
-3. Automatically calls `scan_printers` (below) so the printer list populates.
+3. Automatically calls `scan_printers` (below) so the printer list
+   populates.
 
 **When to click it:** after starting QZ Tray, after restarting QZ Tray, or
 any time the printer list looks stale.
 
 ### `↻ scan_printers`
 
-Queries QZ Tray for the list of printers installed on this machine and
-rebuilds the **TARGETS** list.
+Queries QZ Tray for the printers installed on this machine and rebuilds
+the **PRINTERS** list. Assign one printer to **Receipt** and, optionally, a
+different one to **Ticket** — the printer kitchen orders go to a KOT/BOT
+printer is often different from the one that prints customer receipts.
+Your picks are remembered in `localStorage`.
 
-Each row shows:
+### `👁 preview` (Receipt / Ticket)
 
-- **01, 02, 03…** — the index in the OS printer list
-- **Printer name** — exactly as Windows/macOS reports it
-- **print_80mm ▸** button — prints the receipt to this specific printer
+Opens a modal showing **exactly** what will print, rendered at real
+physical size (the configured `widthMm`, 80mm by default). The preview
+always renders at its true width and height — it never shrinks to fit the
+modal — and both scroll vertically and horizontally as needed, so nothing
+gets squeezed down and unreadable. Press **Esc** or click the dark
+backdrop to close it.
 
-### `👁 preview_receipt`
+### `print ▸` (Receipt / Ticket)
 
-Opens a modal showing **exactly** what will print, rendered at real physical
-size (80 mm wide). Use it to catch layout problems *before* wasting paper.
-
-The preview:
-
-- Matches the printer's paper width (set in `receipt-config.js`)
-- Sizes itself automatically to the height of the receipt
-- Uses a lightweight visual override so the content appears centred
-  (the printed version uses the printer's own dead-zone offset instead)
-
-Press **Esc** or click outside the modal to close it.
-
-### `print_80mm ▸` (per printer)
-
-Sends the current receipt to **that specific printer**.
+Sends the current receipt or ticket to the printer assigned to it.
 
 What happens on the wire:
 
-1. The browser builds the receipt HTML from `receipt-config.js`.
-2. Any remote images (like a logo URL) are fetched and inlined as
-   `data:` URIs so the printer doesn't need network access.
-3. The HTML is measured in a hidden iframe to compute the receipt height.
-4. The receipt + page size are sent to QZ Tray, which asks the server for
-   a signature.
-5. The server signs with `private-key.pem` and returns the base64 signature.
-6. QZ Tray verifies it against `digital-certificate.txt`, then hands the
-   job to the OS spooler.
+1. The browser builds the HTML from `receipt-config.ts` via
+   `buildReceiptHtml()` / `buildTicketHtml()`.
+2. Any remote images (like a logo URL) are fetched and inlined as `data:`
+   URIs so the printer doesn't need network access.
+3. The HTML is measured in a hidden iframe to compute the physical page
+   height.
+4. QZ Tray asks the backend for a signature over the request.
+5. The backend signs with the private key and returns the base64
+   signature.
+6. QZ Tray verifies it against the certificate, then hands the job to the
+   OS print spooler.
 
 You'll see toast messages and console logs at each step.
 
@@ -345,8 +416,8 @@ You don't need a thermal printer to try this.
 
 ### Option 1 — Microsoft Print to PDF (Windows)
 
-Select **Microsoft Print to PDF** in the TARGETS list, click
-**print_80mm ▸**, save the PDF, and open it.
+Select **Microsoft Print to PDF** in the PRINTERS list, print a receipt or
+ticket, save the PDF, and open it.
 
 **One-time setup required** — Windows needs a custom paper size:
 
@@ -361,57 +432,61 @@ page with a tiny receipt in the top-left corner.
 
 ### Option 2 — Any network printer
 
-Send the receipt to any printer you have, even a laser printer. The
-80 mm layout will fit on the left side of an A4 page; useful for checking
+Send the job to any printer you have, even a laser printer. The 80mm
+layout will fit on the left side of an A4 page; useful for checking
 alignment and text quality.
 
 ### Option 3 — Just look at the preview
 
-`preview_receipt` renders the exact HTML QZ will send, at real physical
-size. If it looks right in the preview, it will look right on paper.
+`👁 preview` renders the exact HTML QZ will send, at real physical size. If
+it looks right there, it will look right on paper.
 
 ---
 
-## Customizing the receipt
+## Customizing the receipt and ticket
 
-All receipt content and styling lives in **`public/receipt-config.js`**.
-You normally never touch `receipt-template.js` or `index.html`.
+Almost everything lives in one file: **`src/config/receipt-config.ts`**
+(typed by `src/config/types.ts`). You normally never touch
+`receipt-template.ts` or `ticket-template.ts` directly.
 
 ### Common changes
 
 **Business details:**
 
-```js
+```ts
 business: {
-  name:    "YOUR CAFE NAME",
+  name: "YOUR CAFE NAME",
   tagline: "Fine Dining · Est. 2024",
   address: "123 Main St",
-  phone:   "+1 555 0000",
-  logo:    "https://yourserver.com/logo.png"   // or "" to hide
+  phone: "+1 555 0000",
+  logo: "https://yourserver.com/logo.png"   // or "" to hide
 }
 ```
 
-**Line items:**
+**Line items** (shared by both the receipt and, for name/qty/note, the
+ticket):
 
-```js
+```ts
 lineItems: [
-  { name: "Espresso",    nameAr: "إسبريسو",  qty: 2, price: 3.00 },
-  { name: "Croissant",   nameAr: "كرواسون",  qty: 1, price: 4.50 }
+  { name: "Espresso",  nameAr: "إسبريسو", qty: 2, price: 3.00 },
+  { name: "Croissant", nameAr: "كرواسون", qty: 1, price: 4.50 }
 ]
 ```
 
-**Printer settings:**
+**Printer settings** (shared by receipt + ticket):
 
-```js
+```ts
 printer: {
   density:  203,   // 203 for most 80mm thermals, 300 for higher-end units
-  widthMm:  80     // full paper width
+  widthMm:  80,    // full paper width
+  scale:    4,
+  threshold: 128
 }
 ```
 
 **Paper dead-zones (margin from physical paper edges):**
 
-```js
+```ts
 style: {
   pageWidth:      "76mm",   // total content width
   paddingLeftMm:  "0mm",    // left driver dead-zone
@@ -419,86 +494,137 @@ style: {
 }
 ```
 
-If your receipt is clipped on the right side, increase `paddingRightMm`.
-If it's clipped on the left, increase `paddingLeftMm` — but keep
-`pageWidth` = `printer.widthMm` or QZ will scale everything.
+If the receipt is clipped on the right, increase `paddingRightMm`. If it's
+clipped on the left, increase `paddingLeftMm` — but keep `pageWidth` equal
+to `printer.widthMm` or QZ will scale everything.
 
 **Bilingual content:** set `locale.showArabic: false` to hide all Arabic
 text (useful if your printer's font engine can't shape Arabic script).
 
+**Ticket-specific options** (`ticket` block): the header label, field
+labels (table/server/items/notes), whether items are sorted by name or
+kept in order, whether item names are uppercased, and its own `style`
+block for font sizes.
+
 ### Advanced — changing the layout
 
-Open **`public/receipt-template.js`**. It exports a single function
-`buildReceiptHtml(printerName, logoBase64)` that returns the exact HTML
-string QZ prints. Edit the CSS in there to change fonts, dividers, the
-grand-total box style, or the bilingual footer layout.
+- **`src/templates/receipt-template.ts`** exports `buildReceiptHtml()`,
+  which returns the full `<!DOCTYPE html>` string QZ prints for the
+  customer receipt.
+- **`src/templates/ticket-template.ts`** exports `buildTicketHtml()` for
+  the kitchen/order ticket.
+- **`src/templates/shared.ts`** holds small HTML-building helpers used by
+  both.
 
-Reload the page after editing — there's no build step.
+Both read from `receiptConfig` — nothing is hardcoded. Money formatting,
+Arabic spans, bilingual footer lines, payment methods, and totals are all
+built here. Vite hot-reloads on save; no separate build step in dev.
 
 ---
 
 ## Environment variables
 
-Optional. Copy `.env.example` to `.env` if you want to override defaults:
+Copy `.env.example` to `.env.local` (used by the local Express server) and
+adjust as needed:
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PORT` | `3000` | Server port |
-| `QZ_CERT_FILE` | `certs/digital-certificate.txt` | Path to the public certificate |
-| `QZ_PRIVATE_KEY_FILE` | `certs/private-key.pem` | Path to the private key |
-| `LOGO_URL` | *(unset)* | Image URL proxied through `/logo-base64` for the receipt |
+| Variable | Default | Used by | Purpose |
+|---|---|---|---|
+| `PORT` | `3000` | `server/index.ts` | Local Express server port |
+| `CORS_ORIGIN` | `http://localhost:5173` in dev | `server/index.ts` | Allowed origin for the signing endpoints |
+| `QZ_CERT_FILE` | `certs/digital-certificate.txt` | `server/index.ts` | Path to the public certificate (local dev) |
+| `QZ_PRIVATE_KEY_FILE` | `certs/private-key.pem` | `server/index.ts` | Path to the private key (local dev) |
+| `LOGO_URL` | *(unset)* | `server/index.ts`, `api/logo.ts` | Image URL proxied as base64 for the receipt logo |
+| `QZ_CERTIFICATE` | *(unset)* | `api/cert.ts` | Full certificate contents (Vercel only) |
+| `QZ_PRIVATE_KEY` | *(unset)* | `api/sign.ts` | Full private key contents (Vercel only) |
 
-`server.js` doesn't load `.env` automatically — set the variables in your
-shell or add a `dotenv` dependency if you want file-based config.
+`server/index.ts` reads `.env.local` via `dotenv` automatically. The
+Vercel functions in `api/` read directly from the platform's environment
+variables — set `QZ_CERTIFICATE` and `QZ_PRIVATE_KEY` in
+**Vercel → Project → Settings → Environment Variables** (see
+[Deploying to production](#deploying-to-production-vercel)).
 
 ---
 
 ## How the code works (behind the scenes)
 
-### `server.js` — three endpoints
+### Local dev/runtime — `server/index.ts` (also mirrored in `server.js`)
 
-**`GET /digital-certificate.txt`**
-Returns the contents of `certs/digital-certificate.txt`. This is public
-information — it's safe for anyone to see. QZ Tray fetches it on every
-page load to know who's asking for printer access.
+An Express app with three data endpoints, plus static hosting of the built
+client:
 
-**`GET /sign-message?request=<url-encoded string>`**
-Takes the string QZ sent, signs it with `certs/private-key.pem` using
-**SHA-512 + RSA**, and returns the base64 signature. The private key
-never leaves this process.
+- **`GET /digital-certificate.txt`** — returns the contents of
+  `certs/digital-certificate.txt`. This is public information; QZ Tray
+  fetches it on load to know who's asking for printer access.
+- **`GET /sign-message?request=<string>`** — signs the given string with
+  `certs/private-key.pem` using **SHA-512 + RSA** and returns the base64
+  signature. The private key never leaves this process.
+- **`GET /logo-base64`** — if `LOGO_URL` is set, fetches that image and
+  returns it as base64, avoiding CORS issues when the logo lives on
+  another domain.
 
-**`GET /logo-base64`** (optional)
-If `LOGO_URL` is set, fetches that image and returns it as base64. Avoids
-CORS problems when the logo lives on a different domain.
+When `dist/` exists (after `npm run build`), Express also serves the built
+client and falls back to `dist/index.html` for any route that isn't one of
+the API paths above (SPA fallback).
 
-### `public/index.html` — the front-end
+### Production — `api/*.ts` (Vercel serverless functions)
 
-- Loads `qz-tray.js` from the CDN
-- Tells QZ where to fetch the certificate and signature
-  (`qz.security.setCertificatePromise` / `setSignaturePromise`)
-- `checkConnection()` opens the WebSocket
-- `getPrinters()` lists printers and builds the TARGETS list
-- `previewReceipt()` renders the receipt into a sized iframe
-- `print80mm()` builds the HTML, inlines images, measures the height,
-  and calls `qz.print()`
+The same three endpoints, reimplemented as plain Node request handlers
+(no Express) so they deploy as individual serverless functions:
 
-The receipt body starts with `padding-left: 0; padding-right: 4mm` — so on
-paper, the printer's physical dead zone on the left acts as the left
-margin. In the preview, a small injected CSS override centres the body
-visually so it *looks* symmetric.
+- **`api/cert.ts`** — serves the `QZ_CERTIFICATE` env var.
+- **`api/sign.ts`** — signs with the `QZ_PRIVATE_KEY` env var.
+- **`api/logo.ts`** — proxies `LOGO_URL`.
 
-### `public/receipt-template.js` — HTML generation
+`vercel.json` rewrites the front-end's familiar paths to these functions:
 
-Takes `window.RECEIPT_CONFIG` and returns a complete `<!DOCTYPE html>`
-document. Every style value is interpolated from the config, so nothing is
-hardcoded. Money formatting, Arabic currency spans, bilingual footer
-lines, payment methods, and the totals are all built here.
+```json
+"/digital-certificate.txt" → "/api/cert"
+"/sign-message"            → "/api/sign"
+"/logo-base64"             → "/api/logo"
+"/(.*)"                    → "/index.html"
+```
+
+So the React app always calls the same three URLs regardless of whether
+it's running against the local Express server or against Vercel.
+
+### `src/lib/qz.ts` — the QZ Tray integration layer
+
+- `setupQzSecurity()` — wires `qz.security.setCertificatePromise` /
+  `setSignaturePromise` to fetch `/digital-certificate.txt` and
+  `/sign-message`. Called once in `main.tsx`, before React even renders.
+- `connectQz()` / `listPrinters()` — thin wrappers over the `qz` global.
+- `inlineExternalImages()` — rewrites `<img src="https://…">` tags in the
+  HTML into `data:` URIs before printing, so the printer doesn't need
+  network access for a logo.
+- `measureReceiptHeightMm()` — renders the HTML in a hidden, off-screen
+  iframe to measure its real height in millimeters, so the printed page
+  size matches the content exactly (no wasted paper).
+- `printHtml()` — the full pipeline: inline images → measure height →
+  build a QZ `pixel`/`html` config → `qz.print()`.
+- `withPreviewCentering()` — injects a small `<style>` override used only
+  by the on-screen preview so short receipts look centered; the actual
+  printed version relies on the printer's own dead-zone padding instead.
+
+### `src/components/PreviewModal.tsx` — the live preview
+
+Renders the receipt/ticket HTML inside a `srcDoc` iframe sized to its real
+physical width and auto-measured full height (via `ResizeObserver` +
+several delayed re-measurements for fonts/images). The modal caps at
+`92vh`; its inner preview area scrolls both vertically and horizontally
+(`overflow-auto`) so the content is always shown at true size — never
+shrunk to fit — however tall or wide it ends up being.
+
+### `src/hooks/useQz.ts` — React state around the QZ pipeline
+
+Wraps `connectQz` / `listPrinters` / `printHtml` with `status`,
+`printers`, `errorMessage` state and toast notifications, so `App.tsx`
+only has to call `connect()`, `refreshPrinters()`, and `print()`.
 
 ---
 
 ## Troubleshooting
 
-### "QZ Tray connection failed" (red toast)
+### "QZ Tray is not running" (warning toast)
 
 **Most likely:** QZ Tray is not running.
 
@@ -508,9 +634,9 @@ lines, payment methods, and the totals are all built here.
 
 **Also possible:**
 
-- QZ Tray is running but a firewall is blocking `localhost:8182`.
-  Test in a browser: <http://localhost:8182> — should return a QZ Tray
-  error message (which means it's alive).
+- QZ Tray is running but a firewall is blocking `localhost:8182`. Test in
+  a browser: <http://localhost:8182> — should return a QZ Tray error
+  message (which means it's alive).
 - Another app is using port 8182. Check with
   `netstat -an | findstr 8182` (Windows) or `lsof -i :8182` (macOS/Linux).
 
@@ -522,38 +648,39 @@ lines, payment methods, and the totals are all built here.
 **Fix:**
 
 1. If you don't have `certs/digital-certificate.txt` and
-   `certs/private-key.pem`, follow
+   `certs/private-key.pem` (or the `QZ_CERTIFICATE` / `QZ_PRIVATE_KEY` env
+   vars in production), follow
    [Certificate setup](#certificate-setup-for-silent-printing).
-2. If the popup already appeared and you clicked Allow:
-   check the box **Remember this decision** next time. After that it
-   won't ask again.
+2. If the popup already appeared and you clicked Allow, check
+   **Remember this decision** next time — after that it won't ask again.
 
-### "Signing error" in the server console
+### "Signing failed" / 500 from `/sign-message` or `/api/sign`
 
-**Cause:** `certs/private-key.pem` is missing, unreadable, or not a valid
-PKCS#8 2048-bit RSA key.
+**Cause:** `certs/private-key.pem` is missing/unreadable (local), or
+`QZ_PRIVATE_KEY` isn't set (Vercel), or the key isn't a valid PKCS#8
+2048-bit RSA key.
 
 **Fix:** regenerate the pair from QZ Tray's Site Manager (delete the old
-entry first), then copy both files into `certs/` again.
+entry first), then copy both files into `certs/` again (or update the
+Vercel env vars).
 
 ### Printer list is empty
 
 QZ Tray connected successfully but returned zero printers. Check your OS
-printer list — if there are no printers installed at the OS level, QZ has
-nothing to show. Install at least one (Microsoft Print to PDF is enough to
-test).
+printer list — if none are installed at the OS level, QZ has nothing to
+show. Install at least one (Microsoft Print to PDF is enough to test).
 
 ### Microsoft Print to PDF gives a blank A4 page
 
 Windows' built-in PDF driver needs a custom paper size registered once.
 See [Testing without a real printer](#testing-without-a-real-printer).
 
-### Receipt is cut off on the right side
+### Receipt/ticket is cut off on the right side
 
-Your printer's physical dead zone on the right is larger than expected.
-Increase `paddingRightMm` in `receipt-config.js` by 1–2 mm:
+The printer's physical dead zone on the right is larger than expected.
+Increase `paddingRightMm` in `receipt-config.ts` by 1–2mm:
 
-```js
+```ts
 style: {
   paddingRightMm: "5mm"    // was "4mm"
 }
@@ -562,10 +689,16 @@ style: {
 Keep `pageWidth` and `printer.widthMm` at the same value or QZ will scale
 the whole job.
 
+### Preview looks squashed / hard to read
+
+The preview modal always renders the receipt/ticket at its real physical
+width and scrolls (both directions) instead of shrinking it — if it still
+looks compressed, hard-refresh the page (the running app may be serving a
+stale `dist/` build; run `npm run build` again, or use `npm run dev`).
+
 ### Receipt looks faded or "light"
 
-Thermal printers have a physical darkness setting. Two things to try, in
-order:
+Thermal printers have a physical darkness setting:
 
 1. **Printer firmware** — most 80mm thermals have a paper feed / density
    button combo or a config tool from the manufacturer. Increase darkness
@@ -575,63 +708,68 @@ order:
 
 The HTML output itself is already bold (weights 700–900 throughout).
 
-### "Cannot read properties of undefined (reading 'length')" after editing config
+### TypeScript error after editing the config
 
-You probably deleted or renamed a key that `receipt-template.js` reads.
-Compare against the original config, or restore from git:
+You probably deleted or renamed a key that `types.ts` expects, or that a
+template reads. Compare against `src/config/types.ts`, run
+`npm run typecheck`, or restore from git:
 
 ```bash
-git checkout -- public/receipt-config.js
+git checkout -- src/config/receipt-config.ts
 ```
 
 ### Nothing prints, but no error appears
 
-Check DevTools → Network — do you see a `/sign-message` request? If not,
-QZ never sent the job. Look at the console for a `qz.print resolved:`
-line. If that's missing, the print call was rejected.
-
-If `/sign-message` returned 500, see "Signing error" above.
+Check DevTools → Network — do you see a `/sign-message` (or `/api/sign`)
+request? If not, QZ never sent the job. Check the console for a
+`qz.print resolved:`-style log; if it's missing, the print call was
+rejected before reaching QZ.
 
 ---
 
-## Deploying to production
+## Deploying to production (Vercel)
 
-This project is a **learning example** — before shipping it:
+This project ships a ready-to-use `vercel.json`:
 
-1. **Replace the wildcard CORS** in `server.js`:
-   ```js
-   res.header("Access-Control-Allow-Origin", "*");
-   ```
-   → your real origin(s), e.g. `https://pos.yourcompany.com`.
+```bash
+vercel
+```
 
-2. **Buy a Premium Support certificate** from QZ if your users are on
-   machines you don't control. Demo certs only work on the machine that
+1. In **Vercel → Project → Settings → Environment Variables**, set:
+   - `QZ_CERTIFICATE` — the full contents of `digital-certificate.txt`
+   - `QZ_PRIVATE_KEY` — the full contents of `private-key.pem`
+     (real newlines or `\n` both work — `api/sign.ts` and `api/cert.ts`
+     normalize `\n`)
+   - `LOGO_URL` — optional
+2. Vercel runs `npm run build` and serves `dist/`, with
+   `/digital-certificate.txt`, `/sign-message`, and `/logo-base64`
+   rewritten to the `api/*.ts` functions.
+
+Before shipping this beyond a learning project, also:
+
+3. **Restrict CORS** in `server/index.ts` (`CORS_ORIGIN`) to your real
+   origin(s) if you keep the Express server around for anything, e.g.
+   `https://pos.yourcompany.com`.
+4. **Buy a Premium Support certificate** from QZ if your users are on
+   machines you don't control — demo certs only work on the machine that
    generated them.
-
-3. **Serve over HTTPS** — QZ Tray accepts requests from `https://` origins
-   more reliably than `http://`. Use a reverse proxy (nginx, Caddy) with
-   Let's Encrypt.
-
-4. **Lock down `/sign-message`** — in production, only sign requests that
-   come from your own authenticated user session. The current version will
-   sign anything anyone asks it to.
-
-5. **Keep `certs/private-key.pem` off the client** — obviously already
-   true, but double-check that you never accidentally serve the `certs/`
-   directory (Express doesn't, but reverse proxies sometimes do).
-
-6. **Persist certs as secrets** — mount them via your hosting platform's
-   secret manager rather than committing them.
+5. **Serve over HTTPS** — QZ Tray accepts requests from `https://` origins
+   more reliably than `http://`.
+6. **Lock down the sign endpoint** — in production, only sign requests
+   that come from your own authenticated session; the current version
+   signs anything anyone asks it to.
+7. **Keep the private key as a platform secret**, never commit it —
+   `QZ_PRIVATE_KEY` as a Vercel env var, not a file in the repo.
 
 ---
 
 ## Security notes
 
-- **`private-key.pem` = password.** Anyone with this file can sign any QZ
-  request as your site. Guard it.
+- **`private-key.pem` / `QZ_PRIVATE_KEY` = password.** Anyone with it can
+  sign any QZ request as your site. Guard it.
 - **`.gitignore` already excludes `certs/`.** Don't remove that line.
-- **The certificate (`digital-certificate.txt`) is public.** It's fine to
-  serve it, commit it, or expose it.
+- **The certificate is public.** It's fine to serve it, commit it, or
+  expose it — `digital-certificate.txt` / `QZ_CERTIFICATE`.
 - **The signature endpoint is powerful.** In production, only sign for
   authenticated users, and add rate limiting.
 - **Demo certificates are local-only.** They're trusted by QZ Tray on the
@@ -651,9 +789,8 @@ affiliated with QZ Industries, LLC.
 
 ## Links
 
-- Repo: <https://github.com/maiz-an/QZ-Tray-Learn.git>
+- Repo: <https://github.com/maiz-an/QZ-Tray-Learn>
 - QZ Tray: <https://qz.io>
 - QZ Tray — Getting Started: <https://qz.io/docs/getting-started>
 - QZ Tray — Signing: <https://qz.io/docs/signing>
 - QZ Tray — API Reference: <https://qz.io/api/>
-- QZ Tray — Generate a certificate: <https://qz.io/docs/generate-certificate>
