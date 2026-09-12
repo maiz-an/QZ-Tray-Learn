@@ -34,7 +34,8 @@ export function PreviewModal({
    * Resize iframe to the full height of the receipt.
    *
    * The iframe itself becomes as tall as the complete receipt.
-   * The parent .modal-body handles scrolling.
+   * The modal body (below) handles scrolling when that's taller
+   * than the available space.
    */
   useEffect(() => {
     if (!kind) return;
@@ -146,6 +147,10 @@ export function PreviewModal({
   const title = kind === "ticket" ? "TICKET PREVIEW" : "RECEIPT PREVIEW";
 
   return (
+    /* ==============================================================
+       BACKDROP — matches the old vanilla-JS preview modal exactly:
+       fixed, centered, dimmed, blurred.
+       ============================================================== */
     <div
       className="
         fixed
@@ -170,12 +175,16 @@ export function PreviewModal({
     >
       {/* ============================================================
           MODAL CARD
+
+          width: min(520px, 100%) and max-h: 92vh — same as the old
+          working preview. The card itself never overflows the
+          viewport; the body below handles scrolling internally.
           ============================================================ */}
       <div
         className="
           flex
           max-h-[92vh]
-          w-[min(620px,100%)]
+          w-[min(520px,100%)]
           flex-col
           overflow-hidden
           border
@@ -241,38 +250,34 @@ export function PreviewModal({
         </div>
 
         {/* ==========================================================
-            SCROLLABLE PREVIEW AREA
+            MODAL BODY
 
-            IMPORTANT:
-            - NO flex-1 → the body does NOT grow to fill 92vh.
-              Short receipts = short modal.
-            - min-h-0 → allows the body to shrink below its content
-              size when the receipt is taller than 92vh, so the
-              vertical scroll actually engages instead of overflowing.
-            - overflow-y-auto + overflow-x-auto → the receipt/ticket
-              always renders at its REAL, full width (no shrink-to-fit).
-              If it's wider or taller than the modal, you scroll to
-              see the rest instead of it being squeezed down and
-              becoming unreadable.
-            - justify-start (not justify-center) → when the content is
-              narrower than the modal, `mx-auto` on the iframe still
-              centers it. When it's wider and overflows, it starts
-              flush at the left edge so scrolling right reveals the
-              rest, instead of overflowing equally (and confusingly)
-              on both sides.
+            flex: 0 1 auto (→ flex-shrink), min-h-0, overflow-y-auto:
+            short receipts keep the modal short; a receipt taller than
+            92vh shrinks the body to the remaining space and scrolls
+            internally — exactly like the old CSS's
+            `flex:0 1 auto; overflow-y:auto`.
+            justify-center + items-start (not justify-start): the
+            iframe is centered when it fits, same as before, and
+            scrollbar is hidden but scrolling still works.
             ========================================================== */}
         <div
           className="
             hide-scrollbar
             relative
             min-h-0
-            overflow-auto
+            overflow-y-auto
+            overflow-x-hidden
             bg-[#0d0402]
             p-6
             flex
             items-start
-            justify-start
+            justify-center
           "
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 50% 0%, rgba(255,30,30,.05), transparent 60%)",
+          }}
         >
           {/* ========================================================
               LOADING PLACEHOLDER
@@ -297,6 +302,7 @@ export function PreviewModal({
               style={{
                 width: `${widthMm}mm`,
                 minWidth: 260,
+                maxWidth: "100%",
               }}
             >
               <div className="h-3 w-2/3 rounded bg-gray-200" />
@@ -322,13 +328,10 @@ export function PreviewModal({
           {/* ========================================================
               RECEIPT / TICKET IFRAME
 
-              The iframe itself is NOT scrollable and is never shrunk
-              below its real physical width (no maxWidth cap here) —
-              it always renders at true size. It gets the full receipt
-              height (set by JS above). The parent container handles
-              both vertical AND horizontal scrolling, so the preview
-              stays fully readable at its real width no matter how
-              small the modal/viewport is.
+              width: widthMm mm, min-width 260px, max-width 100% —
+              identical to the old .modal-body iframe rule. It sits at
+              its natural print width and only shrinks on a viewport
+              narrower than the card, exactly like before.
               ======================================================== */}
           <iframe
             ref={frameRef}
@@ -346,6 +349,7 @@ export function PreviewModal({
             style={{
               width: `${widthMm}mm`,
               minWidth: 260,
+              maxWidth: "100%",
               height: 1,
               border: 0,
               overflow: "hidden",
