@@ -3,7 +3,7 @@ import { esc, timeOnly } from "./shared";
 
 export interface TicketOptions {
   label?: string;
-  /** "cancellation" renders a void/cancellation ticket instead of a KOT. */
+  /** "cancellation" renders a void/cancellation receipt instead of a KOT. */
   mode?: "kot" | "cancellation";
   /** Cancellation reason — falls back to order.notes, then config.cancellation.reason. */
   reason?: string;
@@ -13,9 +13,9 @@ export interface TicketOptions {
  * Build the order ticket HTML (KOT / BOT / any prep station).
  * No prices. Big quantity markers. Per-item notes as callouts.
  *
- * Pass `{ mode: "cancellation" }` to render a cancellation ticket
- * instead: same item list, plus a "do not prepare" warning banner,
- * struck-through item names, and a reason box.
+ * Pass `{ mode: "cancellation" }` to render a cancellation receipt
+ * instead: same item list, struck-through names, a "please discard"
+ * banner, a reason box, and a "do not prepare" footer.
  */
 export function buildTicketHtml(opts: TicketOptions = {}): string {
   const isCancellation = opts.mode === "cancellation";
@@ -58,8 +58,10 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
   `;
 
   /* ---------- cancellation warning banner ---------- */
+  // The big banner now shows the discard notice; the "do not prepare"
+  // warning was moved down to the footer.
   const cancelWarningHtml = isCancellation
-    ? `<div class="tk-cancel-warn">${esc(CX.labels.warning || "Do not prepare or serve these items")}</div>`
+    ? `<div class="tk-cancel-warn">${esc(CX.labels.footer || "Please discard this ticket")}</div>`
     : "";
 
   /* ---------- items ---------- */
@@ -105,8 +107,9 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
 
   /* ---------- footer ---------- */
   const footerCount = totalQty ? `${totalQty} ${TL.items || "items"}` : "";
+  // For cancellations: "do not prepare" warning lives in the footer now.
   const footerThanks = isCancellation
-    ? CX.labels.footer || "Please discard this ticket"
+    ? CX.labels.warning || "Do not prepare or serve these items"
     : TL.footer || "Please prepare as ordered";
   const footerPowered = isCancellation
     ? CX.labels.powered || (C.footer && C.footer.powered) || ""
@@ -125,7 +128,7 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
 <html>
 <head>
 <meta charset="utf-8">
-<title>${isCancellation ? "Cancellation Ticket" : "Order Ticket"}</title>
+<title>${isCancellation ? "Cancellation Receipt" : "Preparation Receipt"}</title>
 <style>
   @page { margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }

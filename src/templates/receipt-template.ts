@@ -16,8 +16,8 @@ import {
  * iframe and the print job that goes to QZ Tray.
  *
  * Pass `{ mode: "bill" }` to render the same layout as a "before
- * payment" bill instead: no payment section, and a clear banner
- * marking it as not a valid receipt yet.
+ * payment" order receipt instead: no payment section, no BILL banner,
+ * and the total is labelled "Payable".
  */
 export interface ReceiptOptions {
   mode?: "receipt" | "bill";
@@ -88,15 +88,6 @@ export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
       }
     </header>
   `;
-
-  /* ---------- bill banner (only in "bill" mode) ---------- */
-  const billBannerHtml = isBill
-    ? `
-    <div class="bill-banner">
-      <div class="bill-banner-label">${esc(BILL.header.label || "BILL")}</div>
-      ${BILL.header.note ? `<div class="bill-banner-note">${esc(BILL.header.note)}</div>` : ""}
-    </div>`
-    : "";
 
   /* ---------- order — table OR type ---------- */
   const hasOrder = !!(O.number || O.type || O.cashier || O.terminal || O.table);
@@ -170,12 +161,12 @@ export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
       moneyHtml(tax, curEn)
     );
 
+  // Order receipts (mode: "bill") show "Payable" instead of "TOTAL".
+  // No "AMOUNT DUE" / "BILL" banner is rendered for order receipts.
   const totalEn = isBill
-    ? (BILL.labels.amountDue && BILL.labels.amountDue.en) || "AMOUNT DUE"
+    ? "Payable"
     : (LOC.total && LOC.total.en) || "TOTAL";
-  const totalAr = isBill
-    ? (BILL.labels.amountDue && BILL.labels.amountDue.ar) || ""
-    : (LOC.total && LOC.total.ar) || "";
+  const totalAr = isBill ? "" : (LOC.total && LOC.total.ar) || "";
   const grandArHtml = ar(C, totalAr, "grand-arabic");
 
   const totalsSection = `
@@ -192,7 +183,7 @@ export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
     </div>
   `;
 
-  /* ---------- payment (never shown on a pre-payment bill) ---------- */
+  /* ---------- payment (never shown on a pre-payment order receipt) ---------- */
   const payTime = timeOnly(O.payTime || O.printTime || O.orderTime || "");
   const payLabel = payTime ? `Payment · ${payTime}` : "Payment";
 
@@ -271,7 +262,7 @@ export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
 <html>
 <head>
 <meta charset="utf-8">
-<title>${isBill ? "Bill" : "Receipt"}</title>
+<title>${isBill ? "Order Receipt" : "Checkout Receipt"}</title>
 <style>
   @page { margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
@@ -318,28 +309,6 @@ export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
   }
 
   .header { text-align: center; }
-
-  .bill-banner {
-    margin: 3.5mm 0 0;
-    padding: 2mm 3mm;
-    border: 1.5px solid #000;
-    text-align: center;
-  }
-  .bill-banner-label {
-    font-size: 11pt;
-    font-weight: 900;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: #000;
-  }
-  .bill-banner-note {
-    margin-top: 0.8mm;
-    font-size: 7.5pt;
-    font-style: italic;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    color: #444;
-  }
 
   .logo {
     display: block; width: ${S.logoWidth || "16mm"};
@@ -607,7 +576,6 @@ export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
 <body>
 
   ${headerHtml}
-  ${billBannerHtml}
   ${orderHtml}
   ${customerHtml}
   ${itemsSection}

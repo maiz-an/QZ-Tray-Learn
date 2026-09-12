@@ -145,10 +145,10 @@ export function PreviewModal({
   }
 
   const titles: Record<PreviewKind, string> = {
-    receipt: "RECEIPT PREVIEW",
-    bill: "BILL PREVIEW",
-    ticket: "TICKET PREVIEW",
-    cancellation: "CANCELLATION PREVIEW"
+    receipt: "CHECKOUT RECEIPT PREVIEW",
+    bill: "ORDER RECEIPT PREVIEW",
+    ticket: "PREPARATION RECEIPT PREVIEW",
+    cancellation: "CANCELLATION RECEIPT PREVIEW"
   };
   const title = titles[kind];
 

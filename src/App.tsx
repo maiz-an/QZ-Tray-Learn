@@ -86,7 +86,7 @@ export default function App() {
       html,
       density: receiptConfig.printer.density,
       widthMm: receiptConfig.printer.widthMm,
-      label: "receipt"
+      label: "checkout receipt"
     });
   }, [print, receiptPrinter]);
 
@@ -97,7 +97,7 @@ export default function App() {
       html,
       density: receiptConfig.printer.density,
       widthMm: receiptConfig.printer.widthMm,
-      label: "bill"
+      label: "order receipt"
     });
   }, [print, receiptPrinter]);
 
@@ -108,7 +108,7 @@ export default function App() {
       html,
       density: receiptConfig.printer.density,
       widthMm: receiptConfig.printer.widthMm,
-      label: "order ticket"
+      label: "preparation receipt"
     });
   }, [print, ticketPrinter]);
 
@@ -119,7 +119,7 @@ export default function App() {
       html,
       density: receiptConfig.printer.density,
       widthMm: receiptConfig.printer.widthMm,
-      label: "cancellation ticket"
+      label: "cancellation receipt"
     });
   }, [print, ticketPrinter]);
 

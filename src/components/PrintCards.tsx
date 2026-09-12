@@ -86,36 +86,36 @@ export function PrintCards({
 }: PrintCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {/* -------- Customer receipt (after payment) -------- */}
+      {/* -------- Checkout Receipt (paid / after payment) -------- */}
       <PrintCard
-        title="Customer receipt"
-        badge="with prices"
+        title="Checkout Receipt"
+        badge="after payment"
         printer={receiptPrinter}
         onPreview={onPreviewReceipt}
         onPrint={onPrintReceipt}
       />
 
-      {/* -------- Bill (before payment) -------- */}
+      {/* -------- Order Receipt (before payment) -------- */}
       <PrintCard
-        title="Bill"
+        title="Order Receipt"
         badge="before payment"
         printer={receiptPrinter}
         onPreview={onPreviewBill}
         onPrint={onPrintBill}
       />
 
-      {/* -------- Order ticket -------- */}
+      {/* -------- Preparation Receipt (KOT / BOT) -------- */}
       <PrintCard
-        title="Order ticket"
+        title="Preparation Receipt"
         badge="KOT / BOT"
         printer={ticketPrinter}
         onPreview={onPreviewTicket}
         onPrint={onPrintTicket}
       />
 
-      {/* -------- Cancellation ticket -------- */}
+      {/* -------- Cancellation Receipt -------- */}
       <PrintCard
-        title="Cancellation ticket"
+        title="Cancellation Receipt"
         badge="void order"
         printer={ticketPrinter}
         onPreview={onPreviewCancellation}

@@ -3,11 +3,11 @@ import type { ReceiptConfig } from "./types";
 /**
  * receipt-config.ts
  * ---------------------------------------------------------------------
- *  SHARED configuration for ALL FOUR print templates:
- *    receipt-template.ts       → customer receipt (has prices)
- *    bill-template.ts          → before-payment bill (no payment section)
- *    ticket-template.ts        → order ticket (KOT / BOT — no prices)
- *    cancellation-template.ts  → cancellation ticket (voids an order)
+ *  SHARED configuration for BOTH print templates:
+ *    receipt-template.ts  → Checkout Receipt (paid) and
+ *                            Order Receipt (before payment, "Payable")
+ *    ticket-template.ts   → Preparation Receipt (KOT / BOT) and
+ *                            Cancellation Receipt (void order)
  *
  *  Edit → Save → the app hot-reloads.
  * ---------------------------------------------------------------------
@@ -174,7 +174,7 @@ export const receiptConfig: ReceiptConfig = {
     thanks: "Thank you for dining with us",
     line2: "We look forward to serving you again",
     returnPolicy: "Items once sold cannot be returned without a valid receipt.",
-    powered: "Powered by Bizpoz"
+    powered: ""
   },
 
   ticket: {
@@ -186,7 +186,7 @@ export const receiptConfig: ReceiptConfig = {
       items: "items",
       notes: "Special instructions",
       footer: "Please prepare as ordered",
-      powered: "Powered by Bizpoz"
+      powered: ""
     },
 
     sortItemsByName: false,
@@ -228,10 +228,10 @@ export const receiptConfig: ReceiptConfig = {
   },
 
   /* -------------------------------------------------------------
-   * "Before payment" bill — a pre-payment preview of the receipt,
-   * printed at the customer/receipt printer. Same items + totals
-   * as the receipt, but NO payment section (nothing's been paid
-   * yet) and a clear "not a valid receipt" note.
+   * "Before payment" Order Receipt — a pre-payment preview of the
+   * check. Same items + totals as the Checkout Receipt, but NO
+   * payment section (nothing's been paid yet). The grand-total
+   * label reads "Payable". No "BILL" banner is printed.
    * ------------------------------------------------------------- */
   bill: {
     header: {
@@ -250,10 +250,15 @@ export const receiptConfig: ReceiptConfig = {
   },
 
   /* -------------------------------------------------------------
-   * Cancellation ticket — printed at the kitchen/ticket printer to
+   * Cancellation Receipt — printed at the kitchen/ticket printer to
    * void an order that's already been sent to prep. Same item list
-   * as the order ticket, with a "do not prepare" warning banner and
-   * an optional reason.
+   * as the Preparation Receipt, with a "Removed Products" banner,
+   * a "Kindly Remove" footer note, and an optional reason.
+   *
+   * NOTE on key names: `labels.footer` renders as the big banner,
+   * and `labels.warning` renders as the small footer line. The names
+   * are kept as-is to avoid touching the template — only the text
+   * values below were changed.
    * ------------------------------------------------------------- */
   cancellation: {
     header: { label: "CANCELLED" },
@@ -261,9 +266,11 @@ export const receiptConfig: ReceiptConfig = {
     labels: {
       reason: "Reason",
       items: "items",
-      footer: "Please discard this ticket",
-      powered: "Powered by Bizpoz",
-      warning: "Do not prepare or serve these items"
+      // Big banner at the top of the cancellation receipt:
+      footer: "Removed Products",
+      powered: "",
+      // Footer line at the bottom of the cancellation receipt:
+      warning: "Kindly remove"
     },
 
     reason: ""
