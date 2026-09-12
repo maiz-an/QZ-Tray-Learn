@@ -16,8 +16,16 @@
     "thermal-printer",
     "express"
   ],
-  "author": "",
+  "author": "maiz-an",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maiz-an/QZ-Tray-Learn.git"
+  },
+  "homepage": "https://github.com/maiz-an/QZ-Tray-Learn",
+  "bugs": {
+    "url": "https://github.com/maiz-an/QZ-Tray-Learn/issues"
+  },
   "type": "commonjs",
   "engines": {
     "node": ">=18"

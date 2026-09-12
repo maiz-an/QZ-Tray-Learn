@@ -115,15 +115,26 @@
     background:var(--panel-2); border:1px solid var(--line);
     padding:11px 16px; border-radius:3px; cursor:pointer;
     transition:border-color .15s ease, background .15s ease, transform .1s ease;
+    display:inline-flex; align-items:center; gap:8px;
   }
   button:hover{ border-color:var(--red-dim); background:#241210; }
   button:active{ transform:translateY(1px); }
-  button:disabled{ opacity:.4; cursor:not-allowed; }
+  button:disabled{ opacity:.55; cursor:progress; }
   button:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
   button.primary{ color:var(--void); background:var(--red); border-color:var(--red); }
   button.primary:hover{ background:var(--red-glow); border-color:var(--red-glow); }
   button.ghost{ background:transparent; }
   button.tiny{ padding:5px 9px; font-size:11px; }
+
+  button .btn-spinner{
+    width:12px; height:12px; border-radius:50%;
+    border:2px solid currentColor; border-top-color:transparent;
+    animation: spin 0.7s linear infinite;
+    display:none; flex:0 0 auto;
+  }
+  button.is-loading .btn-spinner{ display:inline-block; }
+  button.is-loading .btn-icon{ opacity:.4; }
+  @keyframes spin{ to { transform: rotate(360deg); } }
 
   .section-heading{
     font-size:11px; letter-spacing:.14em; color:var(--ink-dim);
@@ -143,8 +154,53 @@
   .target-id{ font-size:11px; color:var(--red-glow); margin-right:10px; letter-spacing:.05em; }
   .target-name{ font-size:13px; font-weight:500; word-break:break-word; }
 
-  .empty-state{ font-size:12.5px; color:var(--ink-dim); padding:4px 0; }
+  /* ---------- skeleton loaders (printers only) ---------- */
+  .skel-target{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:14px; padding:13px 16px; margin-bottom:10px;
+    background:var(--panel); border:1px solid var(--line-dim);
+    border-left:2px solid var(--line);
+  }
+  .skel-left{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+
+  .skel-bar{
+    height:10px; border-radius:2px;
+    background:
+      linear-gradient(90deg,
+        rgba(255,255,255,0.02) 0%,
+        rgba(255,255,255,0.06) 40%,
+        rgba(255,255,255,0.09) 50%,
+        rgba(255,255,255,0.06) 60%,
+        rgba(255,255,255,0.02) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer{
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .skel-num      { width:20px; height:10px; flex:0 0 auto; }
+  .skel-name     { flex:1 1 auto; max-width: 60%; }
+  .skel-name.w2  { max-width: 42%; }
+  .skel-name.w3  { max-width: 52%; }
+  .skel-btn      { width:96px; height:26px; border-radius:3px; flex:0 0 auto; }
+
+  .loading-note{
+    display:flex; align-items:center; gap:10px;
+    font-size:12px; color:var(--ink-dim);
+    padding:10px 0 6px;
+  }
+  .loading-note .dot-spin{
+    width:10px; height:10px; border-radius:50%;
+    border:2px solid var(--red-dim); border-top-color: var(--red-glow);
+    animation: spin 0.75s linear infinite;
+    flex:0 0 auto;
+  }
+
+  .empty-state{ font-size:12.5px; color:var(--ink-dim); padding:4px 0; line-height:1.6; }
   .empty-state::before{ content:"\25B8 "; color:var(--line); }
+  .empty-state b{ color: var(--ink); }
 
   .info{
     margin-top:30px; padding:15px 18px;
@@ -213,7 +269,7 @@
   }
   .modal-body::-webkit-scrollbar{ display:none; }
   .modal-body iframe{
-    width:80mm;                 /* fallback — JS overrides from config */
+    width:80mm;
     min-width:260px; max-width:100%;
     height:1px; margin:0 auto; border:0; display:block;
     background:#fff; border-radius:2px; overflow:hidden;
@@ -286,9 +342,18 @@
   </header>
 
   <div class="actions">
-    <button class="primary" onclick="checkConnection()">&#8635; reconnect_qz</button>
-    <button class="ghost"   onclick="getPrinters()">&#8635; scan_printers</button>
-    <button class="ghost"   onclick="previewReceipt()">&#128196; preview_receipt</button>
+    <button class="primary" id="btn-connect" onclick="checkConnection()">
+      <span class="btn-spinner"></span>
+      <span class="btn-icon">&#8635;</span> reconnect_qz
+    </button>
+    <button class="ghost" id="btn-scan" onclick="getPrinters()">
+      <span class="btn-spinner"></span>
+      <span class="btn-icon">&#8635;</span> scan_printers
+    </button>
+    <button class="ghost" id="btn-preview" onclick="previewReceipt()">
+      <span class="btn-spinner"></span>
+      <span class="btn-icon">&#128196;</span> preview_receipt
+    </button>
   </div>
 
   <div class="section-heading">TARGETS</div>
@@ -336,6 +401,38 @@ function showToast(type, title, message, timeoutMs) {
 }
 
 /* =========================================================
+   UI HELPERS
+   ========================================================= */
+function setBusy(btnId, busy) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.classList.toggle("is-loading", !!busy);
+  btn.disabled = !!busy;
+}
+
+function skeletonPrinterList(count = 3) {
+  const container = document.getElementById("printers");
+  if (!container) return;
+
+  const widths = ["w2", "w3", ""];
+  let html = `<div class="loading-note">
+    <span class="dot-spin"></span> scanning for printers…
+  </div>`;
+
+  for (let i = 0; i < count; i++) {
+    html += `
+      <div class="skel-target">
+        <div class="skel-left">
+          <div class="skel-bar skel-num"></div>
+          <div class="skel-bar skel-name ${widths[i % widths.length]}"></div>
+        </div>
+        <div class="skel-bar skel-btn"></div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+/* =========================================================
    QZ SECURITY
    ========================================================= */
 qz.security.setCertificatePromise(function (resolve, reject) {
@@ -353,19 +450,68 @@ qz.security.setSignaturePromise(function (toSign) {
 });
 
 /* =========================================================
+   QZ ERROR CLASSIFIER
+   ========================================================= */
+function humanizeQzError(err) {
+  const msg = String((err && err.message) || err || "").trim();
+  const looksLikeNotRunning =
+    /websocket|econnrefused|unable to connect|failed to open|connection refused|not running|closed/i
+      .test(msg);
+
+  if (looksLikeNotRunning) {
+    return {
+      code:  "QZ_NOT_RUNNING",
+      title: "QZ Tray is not running",
+      body:  "Start QZ Tray from the system tray (Windows) or menu bar (macOS), then click reconnect_qz.",
+      raw:   msg
+    };
+  }
+
+  return {
+    code:  "QZ_FAILED",
+    title: "QZ Tray connection failed",
+    body:  msg || "Unknown error",
+    raw:   msg
+  };
+}
+
+/* =========================================================
    CONNECT
    ========================================================= */
 async function connectQZ() {
-  if (!qz.websocket.isActive()) await qz.websocket.connect();
+  if (qz.websocket.isActive()) return;
+  await qz.websocket.connect();
 }
+
 async function checkConnection() {
+  setBusy("btn-connect", true);
+  skeletonPrinterList(3);
+
   try {
     await connectQZ();
     showToast("success", "QZ Tray connected");
     await getPrinters();
   } catch (error) {
     console.error(error);
-    showToast("error", "QZ Tray connection failed", error.toString());
+    const info = humanizeQzError(error);
+
+    if (info.code === "QZ_NOT_RUNNING") {
+      showToast("warning", info.title, info.body, 10000);
+    } else {
+      showToast("error", info.title, info.body);
+    }
+
+    const container = document.getElementById("printers");
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-state">
+          ${info.code === "QZ_NOT_RUNNING"
+            ? "QZ Tray is not running — start it from the system tray, then click <b>reconnect_qz</b>."
+            : "Could not reach QZ Tray. Click <b>reconnect_qz</b> to retry."}
+        </div>`;
+    }
+  } finally {
+    setBusy("btn-connect", false);
   }
 }
 
@@ -374,10 +520,16 @@ async function checkConnection() {
    ========================================================= */
 async function getPrinters() {
   const container = document.getElementById("printers");
+  setBusy("btn-scan", true);
+  skeletonPrinterList(3);
+
   try {
     await connectQZ();
     const printers = await qz.printers.find();
     console.log("Available printers:", printers);
+
+    /* Brief delay so the skeleton registers as intentional, not a flicker */
+    await new Promise(r => setTimeout(r, 350));
 
     container.innerHTML = "";
     if (!printers || printers.length === 0) {
@@ -400,7 +552,7 @@ async function getPrinters() {
 
       const btn = document.createElement("button");
       btn.className = "primary";
-      btn.textContent = "print_80mm \u25B8";
+      btn.innerHTML = `<span class="btn-spinner"></span><span class="btn-icon">print_80mm \u25B8</span>`;
       btn.addEventListener("click", () => print80mm(printer, btn));
 
       row.appendChild(info); row.appendChild(btn);
@@ -408,24 +560,34 @@ async function getPrinters() {
     });
   } catch (error) {
     console.error(error);
-    container.innerHTML = '<div class="empty-state">failed to enumerate printers — ' +
-                          String(error) + '</div>';
-    showToast("error", "Failed to get printers", error.toString());
+    const info = humanizeQzError(error);
+
+    container.innerHTML = `
+      <div class="empty-state">
+        ${info.code === "QZ_NOT_RUNNING"
+          ? "QZ Tray is not running — start it from the system tray, then click <b>reconnect_qz</b>."
+          : "Failed to enumerate printers — " + info.body}
+      </div>`;
+
+    if (info.code === "QZ_NOT_RUNNING") {
+      showToast("warning", info.title, info.body, 10000);
+    } else {
+      showToast("error", "Failed to get printers", info.body);
+    }
+  } finally {
+    setBusy("btn-scan", false);
   }
 }
 
 /* =========================================================
-   PREVIEW — dynamic width & height, and centred content
+   PREVIEW
    ---------------------------------------------------------
-   The receipt body uses asymmetric padding (0 left, 4 right)
-   so on paper the printer's dead zone acts as the left margin.
-   In the preview that makes the content look left-shifted.
+   Load and size the receipt while the modal is hidden, then
+   show the modal with a fully-rendered preview.
 
-   Fix: preview iframe spans printer.widthMm (80mm) and we
-   inject a preview-only style that:
-     • centres the receipt body inside the iframe
-     • balances horizontal padding to 2mm each side
-   Print path is completely untouched.
+   Never set `display: none` on the iframe itself — Chrome
+   defers loading srcdoc for hidden iframes, which means the
+   onload event never fires and the swap never happens.
    ========================================================= */
 let _previewRO = null;
 
@@ -437,7 +599,6 @@ function fitPreviewFrame() {
     const body = doc.body;
     if (!body) return;
 
-    /* iframe width = full paper width from printer config */
     const P = (window.RECEIPT_CONFIG && window.RECEIPT_CONFIG.printer) || {};
     const W = Number(P.widthMm) || 80;
     frame.style.width = W + "mm";
@@ -451,6 +612,11 @@ function fitPreviewFrame() {
 }
 
 async function previewReceipt() {
+  setBusy("btn-preview", true);
+
+  const frame = document.getElementById("preview-frame");
+  const modal = document.getElementById("preview-modal");
+
   try {
     let html = window.buildReceiptHtml("(preview)", null);
 
@@ -466,18 +632,26 @@ async function previewReceipt() {
     `;
     html = html.replace("</head>", previewFix + "</head>");
 
-    const frame = document.getElementById("preview-frame");
-
     if (_previewRO) { _previewRO.disconnect(); _previewRO = null; }
 
+    /* Load the iframe while the modal is hidden — this fires onload
+       reliably even if the modal is `display: none`. */
     await new Promise((resolve) => {
       frame.onload = () => resolve();
       frame.srcdoc = html;
     });
 
+    /* Give the browser a tick to finish layout */
     await new Promise(r => setTimeout(r, 120));
+
+    /* Size it BEFORE showing the modal so the user sees the final
+       layout immediately — no jump from tiny to tall. */
     fitPreviewFrame();
 
+    /* Now reveal */
+    modal.classList.add("show");
+
+    /* Keep it sized as the content settles (fonts, logo, etc.) */
     try {
       const doc = frame.contentDocument;
       if (window.ResizeObserver && doc && doc.body) {
@@ -486,12 +660,14 @@ async function previewReceipt() {
       }
     } catch (e) {}
 
-    document.getElementById("preview-modal").classList.add("show");
     requestAnimationFrame(fitPreviewFrame);
     setTimeout(fitPreviewFrame, 250);
   } catch (error) {
     console.error(error);
+    modal.classList.remove("show");
     showToast("error", "preview failed", error.toString());
+  } finally {
+    setBusy("btn-preview", false);
   }
 }
 
@@ -564,11 +740,14 @@ function measureReceiptHeightMm(html, widthMm) {
 }
 
 /* =========================================================
-   PRINT 80mm — plain HTML path (unchanged)
+   PRINT 80mm
    ========================================================= */
 async function print80mm(printerName, btn) {
   console.log("Print 80mm →", printerName);
-  if (btn) btn.disabled = true;
+  if (btn) {
+    btn.classList.add("is-loading");
+    btn.disabled = true;
+  }
   showToast("info", "rendering receipt…", printerName);
 
   try {
@@ -604,9 +783,18 @@ async function print80mm(printerName, btn) {
     showToast("success", "sent to printer", printerName);
   } catch (error) {
     console.error("Print error:", error);
-    showToast("error", "print failed", error.toString());
+    const info = humanizeQzError(error);
+
+    if (info.code === "QZ_NOT_RUNNING") {
+      showToast("warning", info.title, info.body, 10000);
+    } else {
+      showToast("error", "print failed", info.body);
+    }
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.classList.remove("is-loading");
+      btn.disabled = false;
+    }
   }
 }
 
