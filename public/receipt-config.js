@@ -4,22 +4,27 @@
  *  EVERYTHING lives here: content, styling, logo, printer settings.
  *  Edit → Save → Ctrl+Shift+R → print.
  * ---------------------------------------------------------------------
+ *
+ *  CRITICAL RULE:
+ *    printer.widthMm  ===  style.pageWidth   (always the same value)
+ *
+ *  For an 80mm roll:
+ *    page    = 80mm  (full paper)
+ *    pad-L   = left dead zone + safety  (4mm)
+ *    pad-R   = right dead zone + safety (4mm)
+ *    content = 80 − 4 − 4 = 72mm
+ * ---------------------------------------------------------------------
  */
 
 window.RECEIPT_CONFIG = {
 
   /* =============================================================
      PRINTER
-     -------------------------------------------------------------
-     threshold = pixel darkness cutoff for the raster path.
-       Lower  (e.g. 160) → thinner strokes, lighter look
-       Higher (e.g. 210) → thicker strokes, darker look
-       190 is a good default for 80mm thermals.
      ============================================================= */
   printer: {
     density:   203,
-    widthMm:   72,
-    scale:     4,      // 4× = 384 DPI bitmap
+    widthMm:   80,     // FULL paper width — matches style.pageWidth
+    scale:     4,
     threshold: 128
   },
 
@@ -30,11 +35,11 @@ window.RECEIPT_CONFIG = {
     name:    "ELITE TOUCH CAFE",
     nameAr:  "",
     tagline: "Fine Dining · Est. 2020",
-    logo:    "https://grabvo.app/fav.png",
+    logo:    "",
 
     address: "Doha, Qatar",
     phone:   "+974 5000 0000",
-    email:   "info@elitetouchcafe.com",
+    email:   "",
     website: "www.elitetouchcafe.com"
   },
 
@@ -58,11 +63,20 @@ window.RECEIPT_CONFIG = {
 
   /* =============================================================
      3. STYLE
+     -------------------------------------------------------------
+     pageWidth MUST equal printer.widthMm (80mm = full paper).
+     paddingLeftMm / paddingRightMm give the content safe margins
+     inside the driver's dead zones (typically 3mm left, 2mm right).
+     Extra safety margin: +1mm on each side.
      ============================================================= */
   style: {
     baseFont: "'Segoe UI', 'Helvetica Neue', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif",
     baseSize:  "9.5pt",
     lineHeight:"1.4",
+
+    pageWidth:      "76mm",   // FULL paper width
+    paddingLeftMm:  "0mm",    // left dead zone + safety
+    paddingRightMm: "4mm",    // right dead zone + safety
 
     arabicFont: "'Tahoma', 'Segoe UI', 'Simplified Arabic', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', sans-serif",
 
@@ -81,7 +95,7 @@ window.RECEIPT_CONFIG = {
     contactSize:        "7pt",
     logoWidth:          "16mm",
     logoHeight:         "16mm",
-    showLogo:           true,
+    showLogo:           false,
 
     sectionSize:      "7pt",
     sectionTopGap:    "4mm",
@@ -119,7 +133,13 @@ window.RECEIPT_CONFIG = {
     number:    "#0015",
     cashier:   "Merry",
     terminal:  "POS-01",
+
     payment:   "Card ·· 4242",
+
+    payments: [
+      { method: "Cash", amount: 50.00 },
+      { method: "Card", amount: 33.00 }
+    ],
 
     billNo:    "260630000004",
     orderId:   "21260629002VWNBTSHE",
@@ -131,7 +151,7 @@ window.RECEIPT_CONFIG = {
      5. CUSTOMER
      ============================================================= */
   customer: {
-    name:    "Saif",
+    name:    "Saif Eddine",
     phone:   "",
     email:   "",
     address: ""

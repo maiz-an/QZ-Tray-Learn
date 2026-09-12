@@ -2,6 +2,11 @@
  * receipt-template.js
  * ---------------------------------------------------------------------
  * Modern premium receipt with bilingual EN/AR support.
+ *
+ *    style.pageWidth         — total content width (mm)
+ *    style.paddingLeftMm     — gap from left paper edge (driver dead zone)
+ *    style.paddingRightMm    — gap from right paper edge (driver dead zone)
+ *    order.payments[]        — multi-method payment breakdown
  * ---------------------------------------------------------------------
  */
 
@@ -15,11 +20,9 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
 
-  /* plain number, no currency */
   const moneyPlain = (n) =>
     (Math.round((Number(n) || 0) * 100) / 100).toFixed(2);
 
-  /* number + currency; wraps Arabic currency in a matching-weight span */
   const moneyHtml = (n, cur) => {
     const v = moneyPlain(n);
     if (!cur) return v;
@@ -36,6 +39,15 @@
       <div class="kv ${cls}">
         <span class="k">${esc(label)}</span>
         <span class="v">${esc(value)}</span>
+      </div>`;
+  }
+
+  function kvHtml(label, valueHtml, cls = "") {
+    if (valueHtml == null || valueHtml === "") return "";
+    return `
+      <div class="kv ${cls}">
+        <span class="k">${esc(label)}</span>
+        <span class="v">${valueHtml}</span>
       </div>`;
   }
 
@@ -61,7 +73,6 @@
     const F   = C.footer    || {};
     const LOC = C.locale    || {};
 
-    /* ---------------- math ---------------- */
     let subtotal = 0, itemCount = 0;
     (C.lineItems || []).forEach(it => {
       const q = Number(it.qty)   || 0;
@@ -78,7 +89,6 @@
     const curEn = (LOC.currency && LOC.currency.en) || C.currency || "";
     const curAr = (LOC.currency && LOC.currency.ar) || "";
 
-    /* ---------------- logo ---------------- */
     let logoHtml = "";
     if (B.logo) {
       logoHtml = `<img class="logo" src="${esc(B.logo)}" alt="" crossorigin="anonymous">`;
@@ -88,7 +98,6 @@
       logoHtml = `<div class="logo-mark">${esc(initials)}</div>`;
     }
 
-    /* ---------------- header ---------------- */
     const contactLines = [B.address, B.phone].filter(Boolean);
     const contactBot   = [B.email, B.website].filter(Boolean).join("  ·  ");
 
@@ -106,7 +115,6 @@
       </header>
     `;
 
-    /* ---------------- order 2×2 ---------------- */
     const hasOrder = !!(O.number || O.type || O.cashier || O.terminal);
 
     const orderHtml = hasOrder ? `
@@ -119,7 +127,6 @@
       </div>
     ` : "";
 
-    /* ---------------- customer ---------------- */
     let customerHtml = "";
     if (CU.name || CU.phone || CU.email || CU.address) {
       customerHtml = `
@@ -131,13 +138,6 @@
       `;
     }
 
-    /* ---------------- items ----------------
-       Layout:
-         English name          Price
-         Arabic name (left-aligned)
-         Qty × unit price
-       No divider between items.
-    ---------------------------------------- */
     const itemsHtml = (C.lineItems || []).map(it => {
       const q = Number(it.qty)   || 0;
       const p = Number(it.price) || 0;
@@ -164,19 +164,19 @@
       </div>
     `;
 
-    /* ---------------- totals ---------------- */
     const subtotalEn = (LOC.subtotal && LOC.subtotal.en) || "Subtotal";
     const subtotalAr = (LOC.subtotal && LOC.subtotal.ar) || "";
 
     let totalsInner = `
-      ${kv(subtotalEn, moneyPlain(subtotal) + " " + curEn)}
+      ${kvHtml(subtotalEn, moneyHtml(subtotal, curEn))}
       ${subtotalAr ? ar(subtotalAr, "totals-ar") : ""}
     `;
     if (discount > 0) {
-      totalsInner += kv("Discount", "−" + moneyPlain(discount) + " " + curEn);
+      totalsInner += kvHtml("Discount", "−" + moneyHtml(discount, curEn));
     }
     if (tax > 0) {
-      totalsInner += kv(`Tax ${(taxRate * 100).toFixed(2)}%`, moneyPlain(tax) + " " + curEn);
+      totalsInner += kvHtml(`Tax ${(taxRate * 100).toFixed(2)}%`,
+                            moneyHtml(tax, curEn));
     }
 
     const totalEn   = (LOC.total && LOC.total.en) || "TOTAL";
@@ -197,18 +197,40 @@
       </div>
     `;
 
-    /* ---------------- payment ---------------- */
-    const paymentBits = [
-      O.payment,
-      itemCount ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : ""
-    ].filter(Boolean).join("  ·  ");
+    const paymentsList = Array.isArray(O.payments) && O.payments.length
+      ? O.payments
+      : null;
 
-    const paymentHtml = paymentBits ? `
-      ${sectionLabel("Payment")}
-      <div class="order-line">${esc(paymentBits)}</div>
-    ` : "";
+    let paymentHtml = "";
 
-    /* ---------------- reference ---------------- */
+    if (paymentsList) {
+      const rows = paymentsList.map(p => {
+        const method = p.method || "";
+        const amount = Number(p.amount) || 0;
+        return kvHtml(method, moneyHtml(amount, curEn));
+      }).join("");
+
+      const itemLine = itemCount
+        ? `<div class="order-sub">${itemCount} item${itemCount === 1 ? "" : "s"}</div>`
+        : "";
+
+      paymentHtml = `
+        ${sectionLabel("Payment")}
+        ${rows}
+        ${itemLine}
+      `;
+    } else {
+      const legacyBits = [
+        O.payment,
+        itemCount ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : ""
+      ].filter(Boolean).join("  ·  ");
+
+      paymentHtml = legacyBits ? `
+        ${sectionLabel("Payment")}
+        <div class="order-line">${esc(legacyBits)}</div>
+      ` : "";
+    }
+
     const refRows = [
       ["Bill No.",   O.billNo],
       ["Order ID",   O.orderId],
@@ -221,7 +243,6 @@
       ${refRows.map(r => kv(r[0], r[1], "small")).join("")}
     ` : "";
 
-    /* ---------------- footer ---------------- */
     const thanksEn = F.thanks  || "";
     const lineEn   = F.line2   || "";
     const policyEn = F.returnPolicy || "";
@@ -241,7 +262,6 @@
       </footer>
     `;
 
-    /* ---------------- final document ---------------- */
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -251,15 +271,19 @@
   @page { margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
 
-  html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #fff; color: #000;
+    overflow: hidden;                    /* prevent any overflow shift */
+  }
 
   body {
-    width: ${S.pageWidth || "72mm"};
+    width: ${S.pageWidth || "76mm"};
     padding:
       ${S.topPadding    || "4mm"}
-      1.2mm
+      ${S.paddingRightMm || "2mm"}
       ${S.bottomPadding || "5mm"}
-      0.8mm;
+      ${S.paddingLeftMm  || "0mm"};
 
     font-family: ${S.baseFont ||
       "'Segoe UI', 'Helvetica Neue', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif"};
@@ -274,9 +298,6 @@
     print-color-adjust: exact;
   }
 
-  /* ================================================================
-     ARABIC base
-     ================================================================ */
   .ar-text {
     font-family: ${S.arabicFont ||
       "'Tahoma', 'Segoe UI', 'Simplified Arabic', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', sans-serif"};
@@ -285,16 +306,12 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* currency next to amounts — matches the item price weight */
   .ar-currency {
     font-size: 0.9em;
     font-weight: ${S.arabicWeightCurrency || "700"};
     color: #333;
   }
 
-  /* ================================================================
-     HEADER
-     ================================================================ */
   .header { text-align: center; }
 
   .logo {
@@ -340,9 +357,6 @@
   }
   .biz-contact .dim { color: #666; }
 
-  /* ================================================================
-     SECTION LABELS
-     ================================================================ */
   .section-label {
     margin: ${S.sectionTopGap || "4mm"} 0 1.8mm;
     padding-bottom: 1mm;
@@ -354,9 +368,6 @@
     border-bottom: 1px solid #000;
   }
 
-  /* ================================================================
-     ORDER — 2×2 grid
-     ================================================================ */
   .order-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -370,13 +381,8 @@
     color: #000;
     overflow-wrap: anywhere;
   }
-  .order-cell.right {
-    text-align: right;
-  }
+  .order-cell.right { text-align: right; }
 
-  /* ================================================================
-     ORDER / PAYMENT single line
-     ================================================================ */
   .order-line {
     font-size: ${S.orderLineSize || "9pt"};
     font-weight: 700;
@@ -391,9 +397,6 @@
     letter-spacing: 0.02em;
   }
 
-  /* ================================================================
-     KEY ······ VALUE ROWS
-     ================================================================ */
   .kv {
     display: flex;
     justify-content: space-between;
@@ -409,7 +412,6 @@
   .kv.small .k { color: #555; }
   .kv.small .v { font-weight: 600; }
 
-  /* Arabic line under Subtotal */
   .totals-ar {
     margin-top: -0.4mm;
     margin-bottom: 0.6mm;
@@ -420,13 +422,8 @@
     text-align: left;
   }
 
-  /* ================================================================
-     ITEMS
-     ================================================================ */
   .items { margin-top: 0.5mm; }
-
-  /* NO divider between items — clean flow */
-  .item { padding: ${S.itemPadding || "2mm"} 0; }
+  .item  { padding: ${S.itemPadding || "2mm"} 0; }
 
   .item-line {
     display: flex;
@@ -442,7 +439,6 @@
     overflow-wrap: anywhere;
     color: #000;
   }
-  /* smaller + slightly bolder price */
   .item-price {
     font-size: ${S.itemPriceSize || "9pt"};
     font-weight: ${S.itemPriceWeight || "700"};
@@ -450,7 +446,6 @@
     color: #000;
   }
 
-  /* Arabic product name — pinned under the English name (LEFT side). */
   .item-name-ar {
     margin-top: 0.4mm;
     font-size: ${S.itemNameArSize || "8pt"};
@@ -460,7 +455,6 @@
     text-align: left;
   }
 
-  /* Qty × unit price — sits below the Arabic name */
   .item-meta {
     margin-top: 0.6mm;
     font-size: ${S.itemMetaSize || "7.5pt"};
@@ -470,9 +464,6 @@
 
   .empty { text-align: center; padding: 3mm 0; color: #999; font-size: 9pt; }
 
-  /* ================================================================
-     TOTALS  +  BOXED GRAND TOTAL
-     ================================================================ */
   .totals { margin-top: ${S.subtotalTopGap || "3mm"}; }
 
   .grand {
@@ -523,9 +514,6 @@
     color: #333;
   }
 
-  /* ================================================================
-     FOOTER — Arabic stays light
-     ================================================================ */
   .footer {
     margin-top: 6mm;
     padding-top: 4mm;
