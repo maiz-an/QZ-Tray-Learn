@@ -86,15 +86,6 @@ export function PrintCards({
 }: PrintCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {/* -------- Checkout Receipt (paid / after payment) -------- */}
-      <PrintCard
-        title="Checkout Receipt"
-        badge="after payment"
-        printer={receiptPrinter}
-        onPreview={onPreviewReceipt}
-        onPrint={onPrintReceipt}
-      />
-
       {/* -------- Order Receipt (before payment) -------- */}
       <PrintCard
         title="Order Receipt"
@@ -102,6 +93,15 @@ export function PrintCards({
         printer={receiptPrinter}
         onPreview={onPreviewBill}
         onPrint={onPrintBill}
+      />
+
+      {/* -------- Checkout Receipt (paid / after payment) -------- */}
+      <PrintCard
+        title="Checkout Receipt"
+        badge="after payment"
+        printer={receiptPrinter}
+        onPreview={onPreviewReceipt}
+        onPrint={onPrintReceipt}
       />
 
       {/* -------- Preparation Receipt (KOT / BOT) -------- */}
