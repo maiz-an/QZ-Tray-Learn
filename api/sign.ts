@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -16,21 +16,22 @@ function findPrivateKey(): string | null {
   return null;
 }
 
-export default function handler(req: Request, res: Response) {
-  const request = String(req.query.request ?? "");
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  const request = String(req.query?.request ?? "");
+
   if (!request) {
-    return res.status(400).type("text/plain").send("Missing request parameter");
+    res.statusCode = 400;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("Missing request parameter");
+    return;
   }
 
   const keyPath = findPrivateKey();
   if (!keyPath) {
-    return res
-      .status(500)
-      .type("text/plain")
-      .send(
-        "private-key.pem not found. Make sure the certs/ folder is committed " +
-          "and vercel.json includes it (functions.includeFiles)."
-      );
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("private-key.pem not found. Check that certs/ is committed.");
+    return;
   }
 
   try {
@@ -40,12 +41,13 @@ export default function handler(req: Request, res: Response) {
     signer.end();
     const signature = signer.sign(privateKey, "base64");
 
-    res.type("text/plain").send(signature);
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/plain");
+    res.end(signature);
   } catch (err) {
     console.error("Signing error:", err);
-    res
-      .status(500)
-      .type("text/plain")
-      .send("Signing failed. Check that private-key.pem is a valid PEM file.");
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("Signing failed. Check that private-key.pem is a valid PEM.");
   }
 }

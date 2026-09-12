@@ -1,10 +1,7 @@
-import type { Request, Response } from "express";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import fs from "node:fs";
 import path from "node:path";
 
-/* Try every plausible location for the cert. Vercel puts deployed
-   files under /var/task (which is process.cwd()), local dev uses
-   the repo root. */
 function findCert(): string | null {
   const candidates = [
     path.join(process.cwd(), "certs", "digital-certificate.txt"),
@@ -18,24 +15,25 @@ function findCert(): string | null {
   return null;
 }
 
-export default function handler(_req: Request, res: Response) {
+export default function handler(_req: VercelRequest, res: VercelResponse) {
   const filePath = findCert();
 
   if (!filePath) {
-    return res
-      .status(500)
-      .type("text/plain")
-      .send(
-        "digital-certificate.txt not found. Make sure the certs/ folder " +
-          "is committed and that vercel.json includes it (functions.includeFiles)."
-      );
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("digital-certificate.txt not found. Check that certs/ is committed.");
+    return;
   }
 
   try {
     const cert = fs.readFileSync(filePath, "utf8");
-    res.type("text/plain").send(cert);
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/plain");
+    res.end(cert);
   } catch (err) {
     console.error("Cert read error:", err);
-    res.status(500).type("text/plain").send("Could not read certificate file.");
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("Could not read certificate file.");
   }
 }
