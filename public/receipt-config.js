@@ -12,19 +12,8 @@ window.RECEIPT_CONFIG = {
      PRINTER
      ============================================================= */
   printer: {
-    /* Hardware DPI of your thermal printer (hint for QZ Tray).
-       BILL / LAN 80MM units are usually 203 dpi.
-       If print comes out too light or too dark, try 300. */
     density:  203,
-
-    /* Content width in millimetres. 72 is the safe limit for an
-       80mm roll; drop to 70 if the right edge still clips. */
     widthMm:  72,
-
-    /* Rasterization multiplier.
-       4 → bitmap is 96 × 4 = 384 DPI (crisp, sharper).
-       3 → 288 DPI (faster, lighter payload).
-       Keep 4 unless printing is slow. */
     scale:    4
   },
 
@@ -33,11 +22,8 @@ window.RECEIPT_CONFIG = {
      ============================================================= */
   business: {
     name:    "ELITE TOUCH CAFE",
+    nameAr:  "",
     tagline: "Fine Dining · Est. 2020",
-
-    /* Logo URL. Must send Access-Control-Allow-Origin.
-       If the server doesn't, the logo is silently dropped
-       and the receipt still prints fine. */
     logo:    "https://grabvo.app/fav.png",
 
     address: "Doha, Qatar",
@@ -47,27 +33,57 @@ window.RECEIPT_CONFIG = {
   },
 
   /* =============================================================
-     2. STYLE
+     2. LOCALE
+     ============================================================= */
+  locale: {
+    showArabic: true,
+    currency:   { en: "ر.ق", ar: "" },
+
+    subtotal:   { en: "Subtotal", ar: "المجموع الفرعي" },
+    total:      { en: "TOTAL",    ar: "الإجمالي" },
+
+    thanks:     { en: "Thank you for dining with us",
+                  ar: "شكراً لتناولكم الطعام معنا" },
+    visitAgain: { en: "We look forward to serving you again",
+                  ar: "نتطلع لخدمتكم مرة أخرى" },
+    returnNote: { en: "Items once sold cannot be returned without a valid receipt.",
+                  ar: "لا يمكن إرجاع المنتجات بعد البيع دون فاتورة صالحة." }
+  },
+
+  /* =============================================================
+     3. STYLE
      ============================================================= */
   style: {
-
     baseFont: "'Segoe UI', 'Helvetica Neue', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif",
     baseSize:  "9.5pt",
     lineHeight:"1.4",
 
+    arabicFont: "'Tahoma', 'Segoe UI', 'Simplified Arabic', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', sans-serif",
+
+    /* Latin + Arabic weights */
+    itemPriceSize:        "9pt",   // smaller than item name (was 10pt shared)
+    itemPriceWeight:      "700",   // a touch bolder (was 600)
+    arabicWeightHead:     "700",
+    arabicWeightBody:     "600",
+    arabicWeightCurrency: "700",   // ر.ق matches item price weight
+    arabicWeightGrand:    "500",
+    arabicWeightItemName: "500",
+    arabicWeightSmall:    "500",
+
     /* header */
-    businessNameSize: "20pt",
-    taglineSize:      "7pt",
-    contactSize:      "7pt",
-    logoWidth:        "16mm",
-    logoHeight:       "16mm",
-    showLogo:         true,
+    businessNameSize:   "20pt",
+    businessNameArSize: "15pt",
+    taglineSize:        "7pt",
+    contactSize:        "7pt",
+    logoWidth:          "16mm",
+    logoHeight:         "16mm",
+    showLogo:           true,
 
     /* section labels */
     sectionSize:      "7pt",
     sectionTopGap:    "4mm",
 
-    /* order / payment */
+    /* order meta table */
     orderLineSize:    "9pt",
 
     /* meta rows */
@@ -77,22 +93,29 @@ window.RECEIPT_CONFIG = {
 
     /* items */
     itemNameSize:     "10pt",
+    itemNameArSize:   "8pt",
     itemMetaSize:     "7.5pt",
     itemPadding:      "2mm",
 
+    /* subtotal block spacing */
+    subtotalTopGap:   "3mm",   // bigger gap above Subtotal row
+
     /* totals */
     grandLabelSize:   "11pt",
+    grandArSize:      "11pt",
     grandTotalSize:   "16pt",
 
     /* footer */
     thanksSize:       "10pt",
+    footerArSize:     "9.5pt",
+    smallArSize:      "8.5pt",
     footerSize:       "7.5pt",
     smallFooterSize:  "6.8pt",
     poweredSize:      "6.5pt"
   },
 
   /* =============================================================
-     3. ORDER
+     4. ORDER
      ============================================================= */
   order: {
     type:      "Takeaway",
@@ -108,33 +131,33 @@ window.RECEIPT_CONFIG = {
   },
 
   /* =============================================================
-     4. CUSTOMER (set fields to "" to hide)
+     5. CUSTOMER
      ============================================================= */
   customer: {
-    name:    "Walk-in",
+    name:    "Saif",
     phone:   "",
     email:   "",
     address: ""
   },
 
   /* =============================================================
-     5. ITEMS
+     6. ITEMS
      ============================================================= */
   lineItems: [
-    { name: "Tiramisu Arabic Coffee", qty: 2, price: 25.00 },
-    { name: "Cappuccino",             qty: 1, price: 15.00 },
-    { name: "Chocolate Cake",         qty: 1, price: 18.00 }
+    { name: "Tiramisu Arabic Coffee", nameAr: "تيراميسو قهوة عربية", qty: 2, price: 25.00 },
+    { name: "Cappuccino",             nameAr: "كابتشينو",              qty: 1, price: 15.00 },
+    { name: "Chocolate Cake",         nameAr: "كيك الشوكولاتة",        qty: 1, price: 18.00 }
   ],
 
   /* =============================================================
-     6. MONEY
+     7. MONEY
      ============================================================= */
-  currency: "RM",
+  currency: "ر.ق",
   discount: 0,
-  taxRate:  0,        // 0.08 = 8%
+  taxRate:  0,
 
   /* =============================================================
-     7. FOOTER
+     8. FOOTER
      ============================================================= */
   footer: {
     thanks:       "Thank you for dining with us",

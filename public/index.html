@@ -155,6 +155,7 @@
   .info a:hover{ border-bottom-color:var(--red-glow); }
   .info b{ color:var(--ink); }
 
+  /* ---------- toasts ---------- */
   #toast-container{
     position:fixed; top:18px; right:18px; z-index:9999;
     display:flex; flex-direction:column; gap:8px;
@@ -176,6 +177,7 @@
   .toast-title::before{ content:"> "; color:var(--ink-dim); }
   .toast-body{ color:var(--ink-dim); word-break:break-word; }
 
+  /* ---------- preview modal ---------- */
   .modal{
     position:fixed; inset:0; z-index:9998;
     background:rgba(0,0,0,.85); display:none;
@@ -183,9 +185,14 @@
     padding:24px; backdrop-filter:blur(6px);
   }
   .modal.show{ display:flex; }
+
+  /* modal-card has NO fixed height — it grows / shrinks with content.
+     max-height:92vh caps it so tall receipts scroll instead of
+     pushing past the viewport. */
   .modal-card{
     background:var(--panel); border:1px solid var(--line);
-    width:min(520px,100%); max-height:92vh;
+    width:min(520px,100%);
+    max-height:92vh;
     display:flex; flex-direction:column;
     box-shadow: 0 24px 80px rgba(0,0,0,.7),
                 0 0 0 1px rgba(255,30,30,.08),
@@ -196,27 +203,38 @@
     display:flex; justify-content:space-between; align-items:center;
     font-size:11px; letter-spacing:.14em; color:var(--ink-dim);
     background:var(--panel-2);
+    flex:0 0 auto;
   }
   .modal-head .title{ display:flex; align-items:center; gap:8px; }
   .modal-head .title::before{
     content:""; width:6px; height:6px; border-radius:50%;
     background:var(--red); box-shadow:0 0 8px 1px var(--red);
   }
+
+  /* modal-body shrinks to content when short, scrolls when tall */
   .modal-body{
-    flex:1; overflow-y:auto; overflow-x:hidden; background:#0d0402;
-    padding:28px 24px;
+    flex:0 1 auto;
+    overflow-y:auto; overflow-x:hidden;
+    background:#0d0402;
+    padding:24px 24px;
     display:flex; justify-content:center; align-items:flex-start;
     background-image: radial-gradient(circle at 50% 0%, rgba(255,30,30,.05), transparent 60%);
-    /* hide the scrollbar visually while keeping scroll functionality */
+    /* hidden scrollbar, scroll still works */
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
   .modal-body::-webkit-scrollbar{ display:none; }
+
+  /* iframe height is set by JS to match the receipt content exactly.
+     A small default prevents a flash of 0-height before JS runs. */
   .modal-body iframe{
-    width:80mm; min-width:320px; max-width:100%;
-    height:720px;                 /* auto-adjusted after load */
+    width:72mm;
+    min-width:260px;
+    max-width:100%;
+    height:1px;                 /* overridden by JS after load */
+    margin:0 auto;
     border:0; display:block; background:#fff; border-radius:2px;
-    overflow:hidden;              /* belt-and-braces against inner scrollbars */
+    overflow:hidden;
     box-shadow: 0 0 0 1px rgba(0,0,0,.6),
                 0 18px 50px rgba(0,0,0,.75),
                 0 0 90px rgba(255,30,30,.08);
@@ -226,6 +244,7 @@
 
 <body>
 
+<!-- decorative background -->
 <svg class="web-bg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 100 100" preserveAspectRatio="none">
   <defs>
@@ -261,6 +280,7 @@
 <div class="scanlines"></div>
 <div id="toast-container"></div>
 
+<!-- preview modal -->
 <div id="preview-modal" class="modal" onclick="if(event.target===this) closePreview()">
   <div class="modal-card">
     <div class="modal-head">
@@ -415,39 +435,68 @@ async function getPrinters() {
 }
 
 /* =========================================================
-   PREVIEW
+   PREVIEW — dynamic height, no fixed minimum
    ---------------------------------------------------------
-   Now sizes the iframe to the receipt's real height so no
-   inner scrollbar appears — the modal-body scrolls instead,
-   and even that scrollbar is hidden via CSS.
+   The iframe is sized to the receipt's exact content height
+   after load. A ResizeObserver keeps it in sync when late
+   assets (logo) change the height. The modal-card then
+   grows/shrinks to match; tall receipts scroll inside the
+   modal (capped by max-height:92vh).
    ========================================================= */
+let _previewRO = null;
+
+function fitPreviewFrame() {
+  const frame = document.getElementById("preview-frame");
+  if (!frame || !frame.contentDocument) return;
+  try {
+    const doc  = frame.contentDocument;
+    const body = doc.body;
+    if (!body) return;
+
+    const h = Math.max(
+      doc.documentElement.scrollHeight,
+      doc.documentElement.offsetHeight,
+      body.scrollHeight,
+      body.offsetHeight
+    );
+    if (h > 0) frame.style.height = h + "px";
+  } catch (e) { /* ignore cross-doc errors */ }
+}
+
 async function previewReceipt() {
   try {
-    const html = window.buildReceiptHtml("(preview)", null);
+    const html  = window.buildReceiptHtml("(preview)", null);
     const frame = document.getElementById("preview-frame");
 
-    /* load the receipt and wait for it to finish laying out */
+    /* tear down any previous observer */
+    if (_previewRO) { _previewRO.disconnect(); _previewRO = null; }
+
+    /* load receipt */
     await new Promise((resolve) => {
       frame.onload = () => resolve();
       frame.srcdoc = html;
     });
 
-    /* give fonts a moment to settle */
-    await new Promise(r => setTimeout(r, 80));
+    /* wait a tick for fonts to apply */
+    await new Promise(r => setTimeout(r, 120));
 
+    /* size it to content */
+    fitPreviewFrame();
+
+    /* keep it in sync if the logo (or anything else) changes height later */
     try {
       const doc = frame.contentDocument;
-      const h = Math.max(
-        doc.documentElement.scrollHeight,
-        doc.body ? doc.body.scrollHeight : 0
-      );
-      /* 720px is a good minimum so short receipts still look like paper */
-      frame.style.height = Math.max(720, h + 20) + "px";
-    } catch (e) {
-      frame.style.height = "720px";
-    }
+      if (window.ResizeObserver && doc && doc.body) {
+        _previewRO = new ResizeObserver(() => fitPreviewFrame());
+        _previewRO.observe(doc.body);
+      }
+    } catch (e) { /* ignore */ }
 
     document.getElementById("preview-modal").classList.add("show");
+
+    /* some browsers need a nudge after display:flex becomes visible */
+    requestAnimationFrame(fitPreviewFrame);
+    setTimeout(fitPreviewFrame, 250);
   } catch (error) {
     console.error(error);
     showToast("error", "preview failed", error.toString());
@@ -455,10 +504,11 @@ async function previewReceipt() {
 }
 
 function closePreview() {
+  if (_previewRO) { _previewRO.disconnect(); _previewRO = null; }
   document.getElementById("preview-modal").classList.remove("show");
   const frame = document.getElementById("preview-frame");
   frame.srcdoc = "";
-  frame.style.height = "720px";
+  frame.style.height = "1px";
 }
 
 document.addEventListener("keydown", (e) => {
@@ -498,11 +548,7 @@ async function inlineExternalImages(html) {
 }
 
 /* =========================================================
-   MEASURE RECEIPT HEIGHT
-   ---------------------------------------------------------
-   SAFETY = 20 mm gives the printer plenty of headroom for the
-   footer lines (returnPolicy + powered). Previously 4 mm, which
-   was why those lines were cut off.
+   MEASURE RECEIPT HEIGHT (for printing)
    ========================================================= */
 function measureReceiptHeightMm(html, widthMm) {
   return new Promise((resolve) => {
@@ -517,10 +563,8 @@ function measureReceiptHeightMm(html, widthMm) {
           doc.documentElement.scrollHeight,
           doc.body ? doc.body.scrollHeight : 0
         );
-        /* +20 mm safety: font metrics in QZ's Java renderer can be
-           slightly taller than Chrome's, and the driver rounds up. */
         resolve((h * 25.4 / 96) + 20);
-      } catch (e) { resolve(250); }
+      } catch (e) { resolve(260); }
       finally { f.remove(); }
     };
     f.srcdoc = html;
