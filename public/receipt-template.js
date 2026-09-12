@@ -1,12 +1,16 @@
 /**
  * receipt-template.js
  * ---------------------------------------------------------------------
- * Modern premium receipt with bilingual EN/AR support.
+ * Modern premium customer receipt (with prices).
  *
  *    style.pageWidth         — total content width (mm)
- *    style.paddingLeftMm     — gap from left paper edge (driver dead zone)
- *    style.paddingRightMm    — gap from right paper edge (driver dead zone)
+ *    style.paddingLeftMm     — gap from left paper edge
+ *    style.paddingRightMm    — gap from right paper edge
  *    order.payments[]        — multi-method payment breakdown
+ *    order.table             — when set, replaces the type cell
+ *    order.payTime           — shown as "PAYMENT · <time>"
+ *                              (falls back to printTime, then orderTime)
+ *    lineItems[].note        — small italic line under the item
  * ---------------------------------------------------------------------
  */
 
@@ -32,6 +36,13 @@
     }
     return `${v} ${esc(cur)}`;
   };
+
+  /* "30/06/2026 10:55 AM" → "10:55 AM" */
+  function timeOnly(str) {
+    if (!str) return "";
+    const m = String(str).match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+    return m ? m[1] : str;
+  }
 
   function kv(label, value, cls = "") {
     if (value == null || value === "") return "";
@@ -115,13 +126,18 @@
       </header>
     `;
 
-    const hasOrder = !!(O.number || O.type || O.cashier || O.terminal);
+    /* ---------- order — table OR type ---------- */
+    const hasOrder = !!(O.number || O.type || O.cashier || O.terminal || O.table);
+
+    const typeCell = O.table
+      ? `Table ${O.table}`
+      : (O.type || "");
 
     const orderHtml = hasOrder ? `
       ${sectionLabel("Order")}
       <div class="order-grid">
         <div class="order-cell">${esc(O.number   || "")}</div>
-        <div class="order-cell right">${esc(O.type     || "")}</div>
+        <div class="order-cell right">${esc(typeCell)}</div>
         <div class="order-cell">${esc(O.cashier  || "")}</div>
         <div class="order-cell right">${esc(O.terminal || "")}</div>
       </div>
@@ -141,9 +157,14 @@
     const itemsHtml = (C.lineItems || []).map(it => {
       const q = Number(it.qty)   || 0;
       const p = Number(it.price) || 0;
+      const note = (it.note || it.notes || "").trim();
 
       const nameArHtml = it.nameAr
         ? `<div class="item-name-ar ar-text" dir="rtl" lang="ar">${esc(it.nameAr)}</div>`
+        : "";
+
+      const noteHtml = note
+        ? `<div class="item-note">${esc(note)}</div>`
         : "";
 
       return `
@@ -154,6 +175,7 @@
           </div>
           ${nameArHtml}
           <div class="item-meta">${q} × ${moneyPlain(p)}</div>
+          ${noteHtml}
         </div>`;
     }).join("");
 
@@ -197,6 +219,10 @@
       </div>
     `;
 
+    /* ---------- payment — label + time ---------- */
+    const payTime  = timeOnly(O.payTime || O.printTime || O.orderTime || "");
+    const payLabel = payTime ? `Payment · ${payTime}` : "Payment";
+
     const paymentsList = Array.isArray(O.payments) && O.payments.length
       ? O.payments
       : null;
@@ -215,7 +241,7 @@
         : "";
 
       paymentHtml = `
-        ${sectionLabel("Payment")}
+        ${sectionLabel(payLabel)}
         ${rows}
         ${itemLine}
       `;
@@ -226,7 +252,7 @@
       ].filter(Boolean).join("  ·  ");
 
       paymentHtml = legacyBits ? `
-        ${sectionLabel("Payment")}
+        ${sectionLabel(payLabel)}
         <div class="order-line">${esc(legacyBits)}</div>
       ` : "";
     }
@@ -274,7 +300,7 @@
   html, body {
     margin: 0; padding: 0;
     background: #fff; color: #000;
-    overflow: hidden;                    /* prevent any overflow shift */
+    overflow: hidden;
   }
 
   body {
@@ -460,6 +486,19 @@
     font-size: ${S.itemMetaSize || "7.5pt"};
     font-weight: 500;
     color: #555;
+  }
+
+  /* Per-item note — subtle italic gray under the meta line */
+  .item-note {
+    margin-top: 0.6mm;
+    padding-left: 0;
+    font-size:   ${S.itemNoteSize || "7.5pt"};
+    font-style:  italic;
+    font-weight: 500;
+    color: #888;
+    line-height: 1.35;
+    text-align: left;
+    overflow-wrap: anywhere;
   }
 
   .empty { text-align: center; padding: 3mm 0; color: #999; font-size: 9pt; }

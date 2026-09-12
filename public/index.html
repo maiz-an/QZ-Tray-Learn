@@ -42,6 +42,32 @@
   .wrap{ position:relative; z-index:2; max-width:760px; margin:0 auto; padding:56px 20px 80px; }
   header{ margin-bottom:34px; }
 
+  /* ---------- GitHub corner link ---------- */
+  .gh-link{
+    position:absolute; top:24px; right:20px;
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-dim);
+    text-decoration:none;
+    padding:6px 10px;
+    border:1px solid var(--line-dim);
+    border-radius:3px;
+    background:var(--panel);
+    transition:border-color .15s ease, color .15s ease, background .15s ease;
+    z-index:3;
+  }
+  .gh-link:hover{
+    color:var(--ink);
+    border-color:var(--red-dim);
+    background:var(--panel-2);
+  }
+  .gh-link:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
+  .gh-link svg{ width:14px; height:14px; display:block; flex:0 0 auto; }
+  @media (max-width: 520px){
+    .gh-link span.label{ display:none; }
+    .gh-link{ padding:6px 8px; }
+  }
+
   .rec{
     display:inline-flex; align-items:center; gap:7px;
     font-size:11px; letter-spacing:.08em; color:var(--red-glow);
@@ -115,11 +141,11 @@
     background:var(--panel-2); border:1px solid var(--line);
     padding:11px 16px; border-radius:3px; cursor:pointer;
     transition:border-color .15s ease, background .15s ease, transform .1s ease;
-    display:inline-flex; align-items:center; gap:8px;
+    display:inline-flex; align-items:center; gap:8px; justify-content:center;
   }
   button:hover{ border-color:var(--red-dim); background:#241210; }
   button:active{ transform:translateY(1px); }
-  button:disabled{ opacity:.55; cursor:progress; }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
   button:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
   button.primary{ color:var(--void); background:var(--red); border-color:var(--red); }
   button.primary:hover{ background:var(--red-glow); border-color:var(--red-glow); }
@@ -142,27 +168,104 @@
   }
   .section-heading::after{ content:""; flex:1; height:1px; background:var(--line-dim); }
 
-  .target{
-    position:relative; display:flex; align-items:center;
-    justify-content:space-between; gap:14px;
-    padding:13px 16px; margin-bottom:10px;
+  /* =========================================================
+     PRINTER CONFIG PANEL
+     ========================================================= */
+  .config-panel{
     background:var(--panel); border:1px solid var(--line-dim);
     border-left:2px solid var(--line);
-    transition:border-color .15s ease, background .15s ease;
+    padding:16px 18px;
+    display:flex; flex-direction:column; gap:14px;
   }
-  .target:hover{ border-left-color:var(--red); background:var(--panel-2); }
-  .target-id{ font-size:11px; color:var(--red-glow); margin-right:10px; letter-spacing:.05em; }
-  .target-name{ font-size:13px; font-weight:500; word-break:break-word; }
+  .config-row{ display:flex; flex-direction:column; gap:6px; }
+  .config-row label{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-dim); font-weight:600;
+  }
+  .config-row select{
+    font-family:var(--mono); font-size:12.5px; font-weight:500;
+    color:var(--ink);
+    background: var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 34px 10px 12px;
+    width:100%; cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%238f7570' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position: right 12px center;
+    background-size:12px;
+    transition: border-color .15s ease, background-color .15s ease;
+  }
+  .config-row select:hover{ border-color:var(--red-dim); background-color:#241210; }
+  .config-row select:focus{ outline:2px solid var(--red); outline-offset:2px; }
+  .config-row select option{ background:var(--panel-2); color:var(--ink); }
+  .config-hint{
+    font-size:11px; color:var(--ink-dim);
+    letter-spacing:.04em;
+  }
 
-  /* ---------- skeleton loaders (printers only) ---------- */
-  .skel-target{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:14px; padding:13px 16px; margin-bottom:10px;
+  .config-skel{ display:flex; flex-direction:column; gap:14px; }
+  .config-skel-row{ display:flex; flex-direction:column; gap:6px; }
+
+  /* =========================================================
+     PRINT CARDS
+     ========================================================= */
+  .print-grid{
+    display:grid; grid-template-columns: 1fr; gap:12px;
+  }
+  @media (min-width: 640px){
+    .print-grid{ grid-template-columns: 1fr 1fr; }
+  }
+
+  .print-card{
     background:var(--panel); border:1px solid var(--line-dim);
     border-left:2px solid var(--line);
+    padding:16px 18px;
+    display:flex; flex-direction:column; gap:12px;
+    transition: border-color .15s ease, background .15s ease;
   }
-  .skel-left{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+  .print-card:hover{ border-left-color:var(--red); background:var(--panel-2); }
 
+  .print-card-header{
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .print-card-title{
+    font-size:12.5px; font-weight:700;
+    letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink);
+  }
+  .print-card-badge{
+    font-size:9.5px; font-weight:800;
+    letter-spacing:.18em; text-transform:uppercase;
+    color:var(--red-glow);
+    border:1px solid var(--red-dim);
+    padding:2px 6px; border-radius:2px;
+  }
+
+  .print-card-printer{
+    font-size:12px; font-weight:500;
+    color:var(--ink);
+    padding:8px 10px;
+    background: var(--panel-2);
+    border:1px solid var(--line-dim);
+    border-radius:3px;
+    min-height:34px; display:flex; align-items:center;
+    word-break: break-all;
+    line-height:1.3;
+  }
+  .print-card-printer.empty{
+    color:var(--ink-dim); font-style: italic; font-weight:500;
+  }
+
+  .print-card-actions{
+    display:flex; gap:8px;
+  }
+  .print-card-actions button{ flex:1; }
+
+  /* =========================================================
+     SKELETON BARS
+     ========================================================= */
   .skel-bar{
     height:10px; border-radius:2px;
     background:
@@ -179,17 +282,13 @@
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
-
-  .skel-num      { width:20px; height:10px; flex:0 0 auto; }
-  .skel-name     { flex:1 1 auto; max-width: 60%; }
-  .skel-name.w2  { max-width: 42%; }
-  .skel-name.w3  { max-width: 52%; }
-  .skel-btn      { width:96px; height:26px; border-radius:3px; flex:0 0 auto; }
+  .skel-label { height:10px; width:90px; }
+  .skel-input { height:38px; border-radius:3px; }
 
   .loading-note{
     display:flex; align-items:center; gap:10px;
     font-size:12px; color:var(--ink-dim);
-    padding:10px 0 6px;
+    padding:4px 0;
   }
   .loading-note .dot-spin{
     width:10px; height:10px; border-radius:50%;
@@ -251,8 +350,7 @@
     padding:13px 18px; border-bottom:1px solid var(--line-dim);
     display:flex; justify-content:space-between; align-items:center;
     font-size:11px; letter-spacing:.14em; color:var(--ink-dim);
-    background:var(--panel-2);
-    flex:0 0 auto;
+    background:var(--panel-2); flex:0 0 auto;
   }
   .modal-head .title{ display:flex; align-items:center; gap:8px; }
   .modal-head .title::before{
@@ -266,6 +364,7 @@
     display:flex; justify-content:center; align-items:flex-start;
     background-image: radial-gradient(circle at 50% 0%, rgba(255,30,30,.05), transparent 60%);
     scrollbar-width: none; -ms-overflow-style: none;
+    position: relative;
   }
   .modal-body::-webkit-scrollbar{ display:none; }
   .modal-body iframe{
@@ -277,6 +376,30 @@
                 0 18px 50px rgba(0,0,0,.75),
                 0 0 90px rgba(255,30,30,.08);
   }
+
+  .preview-skeleton{
+    width:80mm; min-width:260px; max-width:100%;
+    height:520px; background:#fff; border-radius:2px;
+    padding: 20px 16px; display:flex; flex-direction:column; gap:12px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.6),
+                0 18px 50px rgba(0,0,0,.75);
+  }
+  .preview-skeleton .skel-bar{
+    background:
+      linear-gradient(90deg,
+        rgba(0,0,0,0.04) 0%,
+        rgba(0,0,0,0.09) 40%,
+        rgba(0,0,0,0.13) 50%,
+        rgba(0,0,0,0.09) 60%,
+        rgba(0,0,0,0.04) 100%);
+    background-size: 200% 100%;
+  }
+  .psk-title{ height:18px; width:60%; margin: 0 auto 8px; }
+  .psk-sub  { height:10px; width:40%; margin: 0 auto; }
+  .psk-spacer { height:16px; }
+  .psk-row  { height:9px; width:100%; }
+  .psk-row.short{ width:70%; }
+  .psk-total{ height:22px; width:100%; margin-top:10px; }
 </style>
 </head>
 
@@ -320,20 +443,55 @@
 <div id="preview-modal" class="modal" onclick="if(event.target===this) closePreview()">
   <div class="modal-card">
     <div class="modal-head">
-      <span class="title">RECEIPT PREVIEW</span>
+      <span class="title" id="preview-title">RECEIPT PREVIEW</span>
       <button class="ghost tiny" onclick="closePreview()">✕ close</button>
     </div>
     <div class="modal-body">
-      <iframe id="preview-frame" title="Receipt preview" scrolling="no"></iframe>
+      <div id="preview-skeleton" class="preview-skeleton">
+        <div class="skel-bar psk-title"></div>
+        <div class="skel-bar psk-sub"></div>
+        <div class="psk-spacer"></div>
+        <div class="skel-bar psk-row"></div>
+        <div class="skel-bar psk-row short"></div>
+        <div class="skel-bar psk-row"></div>
+        <div class="psk-spacer"></div>
+        <div class="skel-bar psk-row"></div>
+        <div class="skel-bar psk-row short"></div>
+        <div class="skel-bar psk-row"></div>
+        <div class="skel-bar psk-row short"></div>
+        <div class="skel-bar psk-total"></div>
+      </div>
+      <iframe id="preview-frame" title="Preview" scrolling="no"
+              style="visibility: hidden; position: absolute;"></iframe>
     </div>
   </div>
 </div>
 
 <div class="wrap">
+
+  <!-- GitHub link -->
+  <a class="gh-link"
+     href="https://github.com/maiz-an/QZ-Tray-Learn"
+     target="_blank"
+     rel="noopener noreferrer"
+     aria-label="View source on GitHub">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+               0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+               -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+               .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+               -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09
+               2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+               0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2
+               0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+    <span class="label">github</span>
+  </a>
+
   <header>
     <div class="rec"><span class="dot"></span> LIVE CONSOLE</div>
-    <h1 class="glitch" data-text="QZ-TRAY-LEARN">
-      <span class="prompt">&gt;_</span> QZ-TRAY LEARN
+    <h1 class="glitch" data-text=">_QZ-TRAY">
+      <span class="prompt">&gt;_</span>QZ-TRAY
     </h1>
     <div class="subtitle">
       Silent 80mm receipt printing over QZ Tray. Every request is
@@ -348,23 +506,79 @@
     </button>
     <button class="ghost" id="btn-scan" onclick="getPrinters()">
       <span class="btn-spinner"></span>
-      <span class="btn-icon">&#8635;</span> scan_printers
-    </button>
-    <button class="ghost" id="btn-preview" onclick="previewReceipt()">
-      <span class="btn-spinner"></span>
-      <span class="btn-icon">&#128196;</span> preview_receipt
+      <span class="btn-icon">&#8635;</span> refresh printers
     </button>
   </div>
 
-  <div class="section-heading">TARGETS</div>
-  <div id="printers">
-    <div class="empty-state">no printers loaded yet &mdash; run scan_printers</div>
+  <div class="section-heading">PRINTERS</div>
+  <div class="config-panel" id="config-panel">
+    <div class="loading-note">
+      <span class="dot-spin"></span> connecting to QZ Tray&hellip;
+    </div>
+    <div class="config-skel">
+      <div class="config-skel-row">
+        <div class="skel-bar skel-label"></div>
+        <div class="skel-bar skel-input"></div>
+      </div>
+      <div class="config-skel-row">
+        <div class="skel-bar skel-label"></div>
+        <div class="skel-bar skel-input"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-heading">PRINT</div>
+  <div class="print-grid">
+
+    <div class="print-card">
+      <div class="print-card-header">
+        <span class="print-card-title">Customer receipt</span>
+        <span class="print-card-badge">with prices</span>
+      </div>
+      <div class="print-card-printer empty" id="printer-label-receipt">
+        — no printer assigned —
+      </div>
+      <div class="print-card-actions">
+        <button class="ghost" id="btn-preview-receipt" onclick="openPreview('receipt')">
+          <span class="btn-spinner"></span>
+          <span class="btn-icon">preview</span>
+        </button>
+        <button class="primary" id="btn-print-receipt" onclick="printReceipt(this)">
+          <span class="btn-spinner"></span>
+          <span class="btn-icon">print ▸</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="print-card">
+      <div class="print-card-header">
+        <span class="print-card-title">Order ticket</span>
+        <span class="print-card-badge">KOT / BOT</span>
+      </div>
+      <div class="print-card-printer empty" id="printer-label-ticket">
+        — no printer assigned —
+      </div>
+      <div class="print-card-actions">
+        <button class="ghost" id="btn-preview-ticket" onclick="openPreview('ticket')">
+          <span class="btn-spinner"></span>
+          <span class="btn-icon">preview</span>
+        </button>
+        <button class="primary" id="btn-print-ticket" onclick="printTicket(this)">
+          <span class="btn-spinner"></span>
+          <span class="btn-icon">print ▸</span>
+        </button>
+      </div>
+    </div>
+
   </div>
 
   <div class="info">
     Don't have QZ Tray installed yet? Grab it from
     <a href="https://qz.io/download/" target="_blank" rel="noopener">qz.io/download</a>,
     then see the README for generating a free signing certificate.
+    <br><br>
+    <b>Printer choices are saved</b> to this browser. Reload the page and your
+    receipt &amp; ticket printers are remembered automatically.
     <br><br>
     <b>Edit receipt-config.js</b> to change business, logo, items,
     font sizes, printer density, and footer. Save, hard-refresh, print.
@@ -373,8 +587,22 @@
 
 <script src="receipt-config.js"></script>
 <script src="receipt-template.js"></script>
+<script src="ticket-template.js"></script>
 
 <script>
+/* =========================================================
+   STATE
+   ========================================================= */
+const LS_RECEIPT = "qz.receipt.printer";
+const LS_TICKET  = "qz.ticket.printer";
+
+const state = {
+  connected:      false,
+  printers:       [],
+  receiptPrinter: localStorage.getItem(LS_RECEIPT) || "",
+  ticketPrinter:  localStorage.getItem(LS_TICKET)  || ""
+};
+
 /* =========================================================
    TOASTS
    ========================================================= */
@@ -401,35 +629,151 @@ function showToast(type, title, message, timeoutMs) {
 }
 
 /* =========================================================
-   UI HELPERS
+   BUTTON BUSY
    ========================================================= */
-function setBusy(btnId, busy) {
-  const btn = document.getElementById(btnId);
+function setBusy(btnOrId, busy) {
+  const btn = typeof btnOrId === "string"
+    ? document.getElementById(btnOrId)
+    : btnOrId;
   if (!btn) return;
   btn.classList.toggle("is-loading", !!busy);
   btn.disabled = !!busy;
 }
 
-function skeletonPrinterList(count = 3) {
-  const container = document.getElementById("printers");
-  if (!container) return;
+/* =========================================================
+   CONFIG PANEL — skeleton → real dropdowns
+   ========================================================= */
+function renderConfigSkeleton() {
+  const panel = document.getElementById("config-panel");
+  if (!panel) return;
+  panel.innerHTML = `
+    <div class="loading-note">
+      <span class="dot-spin"></span> connecting to QZ Tray&hellip;
+    </div>
+    <div class="config-skel">
+      <div class="config-skel-row">
+        <div class="skel-bar skel-label"></div>
+        <div class="skel-bar skel-input"></div>
+      </div>
+      <div class="config-skel-row">
+        <div class="skel-bar skel-label"></div>
+        <div class="skel-bar skel-input"></div>
+      </div>
+    </div>`;
+}
 
-  const widths = ["w2", "w3", ""];
-  let html = `<div class="loading-note">
-    <span class="dot-spin"></span> scanning for printers…
-  </div>`;
+function renderConfigEmpty(message, hint) {
+  const panel = document.getElementById("config-panel");
+  if (!panel) return;
+  panel.innerHTML = `
+    <div class="empty-state">${message}</div>
+    ${hint ? `<div class="config-hint">${hint}</div>` : ""}`;
+}
 
-  for (let i = 0; i < count; i++) {
-    html += `
-      <div class="skel-target">
-        <div class="skel-left">
-          <div class="skel-bar skel-num"></div>
-          <div class="skel-bar skel-name ${widths[i % widths.length]}"></div>
-        </div>
-        <div class="skel-bar skel-btn"></div>
-      </div>`;
+function renderConfigDropdowns() {
+  const panel = document.getElementById("config-panel");
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <div class="config-row">
+      <label for="sel-receipt">Receipt printer</label>
+      <select id="sel-receipt"></select>
+    </div>
+    <div class="config-row">
+      <label for="sel-ticket">Ticket printer</label>
+      <select id="sel-ticket"></select>
+    </div>
+    <div class="config-hint">Selections are saved automatically to this browser.</div>
+  `;
+
+  const receiptSel = document.getElementById("sel-receipt");
+  const ticketSel  = document.getElementById("sel-ticket");
+
+  const blank1 = document.createElement("option");
+  blank1.value = "";
+  blank1.textContent = "— select a printer —";
+  receiptSel.appendChild(blank1);
+
+  const blank2 = document.createElement("option");
+  blank2.value = "";
+  blank2.textContent = "— select a printer —";
+  ticketSel.appendChild(blank2);
+
+  state.printers.forEach(name => {
+    const a = document.createElement("option");
+    a.value = name; a.textContent = name;
+    receiptSel.appendChild(a);
+
+    const b = document.createElement("option");
+    b.value = name; b.textContent = name;
+    ticketSel.appendChild(b);
+  });
+
+  /* Restore saved selections — validate they still exist */
+  const storedReceipt = localStorage.getItem(LS_RECEIPT) || "";
+  const storedTicket  = localStorage.getItem(LS_TICKET)  || "";
+
+  receiptSel.value = state.printers.includes(storedReceipt) ? storedReceipt : "";
+  ticketSel.value  = state.printers.includes(storedTicket)  ? storedTicket  : "";
+
+  if (storedReceipt && !state.printers.includes(storedReceipt)) {
+    localStorage.removeItem(LS_RECEIPT);
+    state.receiptPrinter = "";
+  } else {
+    state.receiptPrinter = receiptSel.value;
   }
-  container.innerHTML = html;
+
+  if (storedTicket && !state.printers.includes(storedTicket)) {
+    localStorage.removeItem(LS_TICKET);
+    state.ticketPrinter = "";
+  } else {
+    state.ticketPrinter = ticketSel.value;
+  }
+
+  receiptSel.addEventListener("change", () => {
+    state.receiptPrinter = receiptSel.value;
+    if (state.receiptPrinter) {
+      localStorage.setItem(LS_RECEIPT, state.receiptPrinter);
+      showToast("success", "Receipt printer saved", state.receiptPrinter);
+    } else {
+      localStorage.removeItem(LS_RECEIPT);
+    }
+    updatePrintCards();
+  });
+
+  ticketSel.addEventListener("change", () => {
+    state.ticketPrinter = ticketSel.value;
+    if (state.ticketPrinter) {
+      localStorage.setItem(LS_TICKET, state.ticketPrinter);
+      showToast("success", "Ticket printer saved", state.ticketPrinter);
+    } else {
+      localStorage.removeItem(LS_TICKET);
+    }
+    updatePrintCards();
+  });
+
+  updatePrintCards();
+}
+
+function updatePrintCards() {
+  const receiptLabel = document.getElementById("printer-label-receipt");
+  const ticketLabel  = document.getElementById("printer-label-ticket");
+
+  if (state.receiptPrinter) {
+    receiptLabel.textContent = state.receiptPrinter;
+    receiptLabel.classList.remove("empty");
+  } else {
+    receiptLabel.textContent = "— no printer assigned —";
+    receiptLabel.classList.add("empty");
+  }
+
+  if (state.ticketPrinter) {
+    ticketLabel.textContent = state.ticketPrinter;
+    ticketLabel.classList.remove("empty");
+  } else {
+    ticketLabel.textContent = "— no printer assigned —";
+    ticketLabel.classList.add("empty");
+  }
 }
 
 /* =========================================================
@@ -485,30 +829,30 @@ async function connectQZ() {
 
 async function checkConnection() {
   setBusy("btn-connect", true);
-  skeletonPrinterList(3);
+  renderConfigSkeleton();
 
   try {
     await connectQZ();
+    state.connected = true;
     showToast("success", "QZ Tray connected");
     await getPrinters();
   } catch (error) {
     console.error(error);
+    state.connected = false;
     const info = humanizeQzError(error);
 
     if (info.code === "QZ_NOT_RUNNING") {
       showToast("warning", info.title, info.body, 10000);
+      renderConfigEmpty(
+        "QZ Tray is not running — start it from the system tray, then click <b>reconnect_qz</b>.",
+        "Once connected, printer dropdowns will appear here."
+      );
     } else {
       showToast("error", info.title, info.body);
-    }
-
-    const container = document.getElementById("printers");
-    if (container) {
-      container.innerHTML = `
-        <div class="empty-state">
-          ${info.code === "QZ_NOT_RUNNING"
-            ? "QZ Tray is not running — start it from the system tray, then click <b>reconnect_qz</b>."
-            : "Could not reach QZ Tray. Click <b>reconnect_qz</b> to retry."}
-        </div>`;
+      renderConfigEmpty(
+        "Could not reach QZ Tray. Click <b>reconnect_qz</b> to retry.",
+        "Once connected, printer dropdowns will appear here."
+      );
     }
   } finally {
     setBusy("btn-connect", false);
@@ -519,60 +863,47 @@ async function checkConnection() {
    PRINTERS
    ========================================================= */
 async function getPrinters() {
-  const container = document.getElementById("printers");
   setBusy("btn-scan", true);
-  skeletonPrinterList(3);
+  renderConfigSkeleton();
 
   try {
     await connectQZ();
+    state.connected = true;
+
     const printers = await qz.printers.find();
     console.log("Available printers:", printers);
+    state.printers = Array.isArray(printers) ? printers : [];
 
-    /* Brief delay so the skeleton registers as intentional, not a flicker */
+    /* Brief delay so the skeleton registers as intentional */
     await new Promise(r => setTimeout(r, 350));
 
-    container.innerHTML = "";
-    if (!printers || printers.length === 0) {
-      container.innerHTML = '<div class="empty-state">no printers found on this system</div>';
+    if (state.printers.length === 0) {
       showToast("warning", "No printers found");
+      renderConfigEmpty(
+        "No printers found on this system.",
+        "Install a printer (even Microsoft Print to PDF) and refresh."
+      );
+      updatePrintCards();
       return;
     }
 
-    printers.forEach(function (printer, index) {
-      const row  = document.createElement("div");
-      row.className = "target";
-      const info = document.createElement("div");
-      const num  = document.createElement("span");
-      num.className = "target-id";
-      num.textContent = String(index + 1).padStart(2, "0");
-      const name = document.createElement("span");
-      name.className = "target-name";
-      name.textContent = printer;
-      info.appendChild(num); info.appendChild(name);
-
-      const btn = document.createElement("button");
-      btn.className = "primary";
-      btn.innerHTML = `<span class="btn-spinner"></span><span class="btn-icon">print_80mm \u25B8</span>`;
-      btn.addEventListener("click", () => print80mm(printer, btn));
-
-      row.appendChild(info); row.appendChild(btn);
-      container.appendChild(row);
-    });
+    renderConfigDropdowns();
   } catch (error) {
     console.error(error);
     const info = humanizeQzError(error);
 
-    container.innerHTML = `
-      <div class="empty-state">
-        ${info.code === "QZ_NOT_RUNNING"
-          ? "QZ Tray is not running — start it from the system tray, then click <b>reconnect_qz</b>."
-          : "Failed to enumerate printers — " + info.body}
-      </div>`;
-
     if (info.code === "QZ_NOT_RUNNING") {
       showToast("warning", info.title, info.body, 10000);
+      renderConfigEmpty(
+        "QZ Tray is not running — start it from the system tray, then click <b>reconnect_qz</b>.",
+        "Once connected, printer dropdowns will appear here."
+      );
     } else {
       showToast("error", "Failed to get printers", info.body);
+      renderConfigEmpty(
+        "Failed to enumerate printers — " + info.body,
+        "Click <b>refresh printers</b> to retry."
+      );
     }
   } finally {
     setBusy("btn-scan", false);
@@ -580,14 +911,7 @@ async function getPrinters() {
 }
 
 /* =========================================================
-   PREVIEW
-   ---------------------------------------------------------
-   Load and size the receipt while the modal is hidden, then
-   show the modal with a fully-rendered preview.
-
-   Never set `display: none` on the iframe itself — Chrome
-   defers loading srcdoc for hidden iframes, which means the
-   onload event never fires and the swap never happens.
+   PREVIEW (shared for receipt & ticket)
    ========================================================= */
 let _previewRO = null;
 
@@ -611,47 +935,56 @@ function fitPreviewFrame() {
   } catch (e) {}
 }
 
-async function previewReceipt() {
-  setBusy("btn-preview", true);
+async function openPreview(kind) {
+  const btnId = kind === "ticket" ? "btn-preview-ticket" : "btn-preview-receipt";
+  setBusy(btnId, true);
 
-  const frame = document.getElementById("preview-frame");
-  const modal = document.getElementById("preview-modal");
+  const frame    = document.getElementById("preview-frame");
+  const modal    = document.getElementById("preview-modal");
+  const title    = document.getElementById("preview-title");
+  const skeleton = document.getElementById("preview-skeleton");
+
+  skeleton.style.display = "flex";
+  frame.style.visibility = "hidden";
+  frame.style.position = "absolute";
+  frame.style.height = "1px";
+
+  title.textContent = kind === "ticket" ? "TICKET PREVIEW" : "RECEIPT PREVIEW";
 
   try {
-    let html = window.buildReceiptHtml("(preview)", null);
-
-    /* Preview-only visual fix — centre the body and balance padding */
-    const previewFix = `
-      <style id="__preview_center__">
-        body {
-          margin: 0 auto !important;
-          padding-left: 2mm !important;
-          padding-right: 2mm !important;
-        }
-      </style>
-    `;
-    html = html.replace("</head>", previewFix + "</head>");
+    let html;
+    if (kind === "ticket") {
+      html = window.buildTicketHtml("(preview)", null);
+    } else {
+      html = window.buildReceiptHtml("(preview)", null);
+      const fix = `
+        <style id="__preview_center__">
+          body {
+            margin: 0 auto !important;
+            padding-left: 2mm !important;
+            padding-right: 2mm !important;
+          }
+        </style>
+      `;
+      html = html.replace("</head>", fix + "</head>");
+    }
 
     if (_previewRO) { _previewRO.disconnect(); _previewRO = null; }
 
-    /* Load the iframe while the modal is hidden — this fires onload
-       reliably even if the modal is `display: none`. */
     await new Promise((resolve) => {
       frame.onload = () => resolve();
       frame.srcdoc = html;
     });
 
-    /* Give the browser a tick to finish layout */
     await new Promise(r => setTimeout(r, 120));
-
-    /* Size it BEFORE showing the modal so the user sees the final
-       layout immediately — no jump from tiny to tall. */
     fitPreviewFrame();
 
-    /* Now reveal */
     modal.classList.add("show");
 
-    /* Keep it sized as the content settles (fonts, logo, etc.) */
+    skeleton.style.display = "none";
+    frame.style.visibility = "visible";
+    frame.style.position = "static";
+
     try {
       const doc = frame.contentDocument;
       if (window.ResizeObserver && doc && doc.body) {
@@ -667,7 +1000,7 @@ async function previewReceipt() {
     modal.classList.remove("show");
     showToast("error", "preview failed", error.toString());
   } finally {
-    setBusy("btn-preview", false);
+    setBusy(btnId, false);
   }
 }
 
@@ -677,6 +1010,9 @@ function closePreview() {
   const frame = document.getElementById("preview-frame");
   frame.srcdoc = "";
   frame.style.height = "1px";
+  frame.style.visibility = "hidden";
+  frame.style.position = "absolute";
+  document.getElementById("preview-skeleton").style.display = "flex";
 }
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePreview();
@@ -740,15 +1076,14 @@ function measureReceiptHeightMm(html, widthMm) {
 }
 
 /* =========================================================
-   PRINT 80mm
+   GENERIC PRINT
    ========================================================= */
-async function print80mm(printerName, btn) {
-  console.log("Print 80mm →", printerName);
+async function printJob(printerName, btn, htmlBuilder, label) {
   if (btn) {
     btn.classList.add("is-loading");
     btn.disabled = true;
   }
-  showToast("info", "rendering receipt…", printerName);
+  showToast("info", "rendering " + label + "…", printerName);
 
   try {
     await connectQZ();
@@ -757,11 +1092,11 @@ async function print80mm(printerName, btn) {
     const PRINTER_DENSITY = Number(P.density) || 203;
     const WIDTH_MM        = Number(P.widthMm) || 80;
 
-    let html = window.buildReceiptHtml(printerName, null);
+    let html = htmlBuilder(printerName, null);
     html = await inlineExternalImages(html);
 
     const heightMm = await measureReceiptHeightMm(html, WIDTH_MM);
-    console.log("measured height:", heightMm.toFixed(1), "mm | width:", WIDTH_MM, "mm | density:", PRINTER_DENSITY);
+    console.log(label + " — measured height:", heightMm.toFixed(1), "mm | width:", WIDTH_MM, "mm | density:", PRINTER_DENSITY);
 
     const config = qz.configs.create(printerName, {
       size:          { width: WIDTH_MM, height: heightMm },
@@ -780,15 +1115,15 @@ async function print80mm(printerName, btn) {
 
     const res = await qz.print(config, data);
     console.log("qz.print resolved:", res);
-    showToast("success", "sent to printer", printerName);
+    showToast("success", label + " sent", printerName);
   } catch (error) {
-    console.error("Print error:", error);
+    console.error(label + " error:", error);
     const info = humanizeQzError(error);
 
     if (info.code === "QZ_NOT_RUNNING") {
       showToast("warning", info.title, info.body, 10000);
     } else {
-      showToast("error", "print failed", info.body);
+      showToast("error", label + " print failed", info.body);
     }
   } finally {
     if (btn) {
@@ -796,6 +1131,22 @@ async function print80mm(printerName, btn) {
       btn.disabled = false;
     }
   }
+}
+
+async function printReceipt(btn) {
+  if (!state.receiptPrinter) {
+    showToast("warning", "No receipt printer assigned", "Choose one in the PRINTERS panel above.");
+    return;
+  }
+  return printJob(state.receiptPrinter, btn, window.buildReceiptHtml, "receipt");
+}
+
+async function printTicket(btn) {
+  if (!state.ticketPrinter) {
+    showToast("warning", "No ticket printer assigned", "Choose one in the PRINTERS panel above.");
+    return;
+  }
+  return printJob(state.ticketPrinter, btn, window.buildTicketHtml, "order ticket");
 }
 
 /* =========================================================

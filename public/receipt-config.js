@@ -1,18 +1,12 @@
 /**
  * receipt-config.js
  * ---------------------------------------------------------------------
- *  EVERYTHING lives here: content, styling, logo, printer settings.
+ *  SHARED configuration for BOTH templates:
+ *
+ *    receipt-template.js  → customer receipt (has prices)
+ *    ticket-template.js   → order ticket (KOT / BOT / prep — no prices)
+ *
  *  Edit → Save → Ctrl+Shift+R → print.
- * ---------------------------------------------------------------------
- *
- *  CRITICAL RULE:
- *    printer.widthMm  ===  style.pageWidth   (always the same value)
- *
- *  For an 80mm roll:
- *    page    = 80mm  (full paper)
- *    pad-L   = left dead zone + safety  (4mm)
- *    pad-R   = right dead zone + safety (4mm)
- *    content = 80 − 4 − 4 = 72mm
  * ---------------------------------------------------------------------
  */
 
@@ -23,7 +17,7 @@ window.RECEIPT_CONFIG = {
      ============================================================= */
   printer: {
     density:   203,
-    widthMm:   80,     // FULL paper width — matches style.pageWidth
+    widthMm:   80,
     scale:     4,
     threshold: 128
   },
@@ -62,21 +56,16 @@ window.RECEIPT_CONFIG = {
   },
 
   /* =============================================================
-     3. STYLE
-     -------------------------------------------------------------
-     pageWidth MUST equal printer.widthMm (80mm = full paper).
-     paddingLeftMm / paddingRightMm give the content safe margins
-     inside the driver's dead zones (typically 3mm left, 2mm right).
-     Extra safety margin: +1mm on each side.
+     3. STYLE — customer receipt
      ============================================================= */
   style: {
     baseFont: "'Segoe UI', 'Helvetica Neue', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif",
     baseSize:  "9.5pt",
     lineHeight:"1.4",
 
-    pageWidth:      "76mm",   // FULL paper width
-    paddingLeftMm:  "0mm",    // left dead zone + safety
-    paddingRightMm: "4mm",    // right dead zone + safety
+    pageWidth:      "76mm",
+    paddingLeftMm:  "0mm",
+    paddingRightMm: "4mm",
 
     arabicFont: "'Tahoma', 'Segoe UI', 'Simplified Arabic', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', sans-serif",
 
@@ -127,12 +116,21 @@ window.RECEIPT_CONFIG = {
 
   /* =============================================================
      4. ORDER
+     -------------------------------------------------------------
+     Time fields (used by the PAYMENT section header):
+       payTime    → when the customer actually paid  (preferred)
+       printTime  → when the receipt was printed      (fallback)
+       orderTime  → when the order was placed         (last resort)
+     The receipt shows whichever is set first, formatted as
+     "PAYMENT · 10:55 AM".
      ============================================================= */
   order: {
-    type:      "Takeaway",
+    type:      "Dine-in",
     number:    "#0015",
     cashier:   "Merry",
     terminal:  "POS-01",
+    table:     "4",
+    notes:     "",
 
     payment:   "Card ·· 4242",
 
@@ -143,8 +141,10 @@ window.RECEIPT_CONFIG = {
 
     billNo:    "260630000004",
     orderId:   "21260629002VWNBTSHE",
-    orderTime: "30/06/2026 12:15 AM",
-    printTime: "30/06/2026 10:55 AM"
+
+    payTime:   "30/06/2026 10:55 AM",   // ← when the customer paid
+    orderTime: "30/06/2026 10:30 AM",   // ← when the order was placed
+    printTime: "30/06/2026 10:55 AM"    // ← when the receipt was printed
   },
 
   /* =============================================================
@@ -161,25 +161,101 @@ window.RECEIPT_CONFIG = {
      6. ITEMS
      ============================================================= */
   lineItems: [
-    { name: "Tiramisu Arabic Coffee", nameAr: "تيراميسو قهوة عربية", qty: 2, price: 25.00 },
-    { name: "Cappuccino",             nameAr: "كابتشينو",              qty: 1, price: 15.00 },
-    { name: "Chocolate Cake",         nameAr: "كيك الشوكولاتة",        qty: 1, price: 18.00 }
+    {
+      name:   "Tiramisu Arabic Coffee",
+      nameAr: "تيراميسو قهوة عربية",
+      qty:    2,
+      price:  25.00,
+      note:   "Extra hot · no sugar"
+    },
+    {
+      name:   "Cappuccino",
+      nameAr: "كابتشينو",
+      qty:    1,
+      price:  15.00,
+      note:   ""
+    },
+    {
+      name:   "Chocolate Cake",
+      nameAr: "كيك الشوكولاتة",
+      qty:    1,
+      price:  18.00,
+      note:   "Sliced in 4 pieces"
+    }
   ],
 
   /* =============================================================
-     7. MONEY
+     7. MONEY (customer receipt only)
      ============================================================= */
   currency: "ر.ق",
   discount: 0,
   taxRate:  0,
 
   /* =============================================================
-     8. FOOTER
+     8. FOOTER (customer receipt)
      ============================================================= */
   footer: {
     thanks:       "Thank you for dining with us",
     line2:        "We look forward to serving you again",
     returnPolicy: "Items once sold cannot be returned without a valid receipt.",
     powered:      "Powered by Bizpoz"
+  },
+
+  /* =============================================================
+     9. TICKET — ticket-template.js only
+     ============================================================= */
+  ticket: {
+    header: {
+      label: "KOT"
+    },
+
+    labels: {
+      table:   "Table",
+      server:  "Server",
+      items:   "items",
+      notes:   "Special instructions",
+      footer:  "Please prepare as ordered",
+      powered: "Powered by Bizpoz"
+    },
+
+    sortItemsByName: false,
+    uppercaseItems:  true,
+
+    notes: "",
+
+    style: {
+      pageWidth:      "76mm",
+      paddingLeftMm:  "0mm",
+      paddingRightMm: "4mm",
+      topPadding:     "5mm",
+      bottomPadding:  "5mm",
+
+      baseFont: "'Segoe UI', 'Helvetica Neue', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif",
+      baseSize: "11pt",
+      lineHeight: "1.35",
+
+      badgeSize: "10pt",
+
+      orderNumberSize:   "32pt",
+      orderNumberWeight: "900",
+
+      orderMetaSize:   "12pt",
+      orderMetaWeight: "800",
+
+      itemQtySize:    "18pt",
+      itemQtyWeight:  "900",
+      itemNameSize:   "13pt",
+      itemNameWeight: "800",
+      itemNameArSize: "10pt",
+      itemNoteSize:   "10pt",
+      itemPadding:    "3mm",
+      itemDivider:    "",
+
+      notesLabelSize: "9pt",
+      notesBodySize:  "11pt",
+
+      thanksSize:  "11pt",
+      poweredSize: "7pt"
+    }
   }
 };
