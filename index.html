@@ -3,18 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QZ-Tray Learn // silent print console</title>
 
+    <!-- ============================================================
+         Primary meta
+         ============================================================ -->
+    <title>QZ-Tray Learn // Silent Print Console</title>
+    <meta
+      name="description"
+      content="Silent 80mm receipt printing over QZ Tray. Signed requests server-side — no exposed keys, no browser popup after the first handshake."
+    />
+    <meta
+      name="keywords"
+      content="QZ Tray, silent printing, thermal printer, receipt printing, KOT, BOT, POS, 80mm, ESC/POS, signed requests, web printing"
+    />
+    <meta name="author" content="maiz-an" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0d0402" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- ============================================================
+         Canonical URL — replace with your deployed domain
+         ============================================================ -->
+    <link rel="canonical" href="https://github.com/maiz-an/QZ-Tray-Learn" />
+
+    <!-- ============================================================
+         Open Graph (Facebook, LinkedIn, Discord, Slack, iMessage…)
+         ============================================================ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="QZ-Tray Learn" />
+    <meta property="og:url" content="https://github.com/maiz-an/QZ-Tray-Learn" />
+    <meta property="og:title" content="QZ-Tray Learn // Silent Print Console" />
+    <meta
+      property="og:description"
+      content="Silent 80mm receipt printing over QZ Tray. Signed requests server-side — no exposed keys, no browser popup after the first handshake."
+    />
+    <meta property="og:image" content="https://qz.io/favicon.ico" />
+    <meta property="og:image:alt" content="QZ Tray logo" />
+    <meta property="og:image:width" content="256" />
+    <meta property="og:image:height" content="256" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ============================================================
+         Twitter / X card
+         ============================================================ -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="QZ-Tray Learn // Silent Print Console" />
+    <meta
+      name="twitter:description"
+      content="Silent 80mm receipt printing over QZ Tray. Signed requests server-side — no exposed keys, no browser popup after the first handshake."
+    />
+    <meta name="twitter:image" content="https://qz.io/favicon.ico" />
+    <meta name="twitter:image:alt" content="QZ Tray logo" />
+
+    <!-- ============================================================
+         Favicons — same source as OG image
+         ============================================================ -->
     <link rel="icon" type="image/x-icon" href="https://qz.io/favicon.ico" />
     <link rel="shortcut icon" type="image/x-icon" href="https://qz.io/favicon.ico" />
     <link rel="apple-touch-icon" href="https://qz.io/favicon.ico" />
 
+    <!-- ============================================================
+         Fonts
+         ============================================================ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
+    <!-- ============================================================
+         QZ Tray — loaded before React so window.qz is ready
+         ============================================================ -->
     <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.6/qz-tray.js"></script>
   </head>
   <body>
