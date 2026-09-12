@@ -1,6 +1,6 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Request, Response } from "express";
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(_req: Request, res: Response) {
   const logoUrl = process.env.LOGO_URL;
   if (!logoUrl) return res.status(404).type("text/plain").send("");
 

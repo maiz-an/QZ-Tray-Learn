@@ -1,9 +1,9 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Request, Response } from "express";
 
-export default function handler(_req: VercelRequest, res: VercelResponse) {
-  const cert = process.env.QZ_CERTIFICATE;
+export default function handler(_req: Request, res: Response) {
+  const raw = process.env.QZ_CERTIFICATE;
 
-  if (!cert) {
+  if (!raw) {
     return res
       .status(500)
       .type("text/plain")
@@ -12,6 +12,9 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
           "Environment Variables (paste the full digital-certificate.txt)."
       );
   }
+
+  /* Some Vercel UIs flatten multiline values — unescape if needed. */
+  const cert = raw.replace(/\\n/g, "\n");
 
   res.type("text/plain").send(cert);
 }
