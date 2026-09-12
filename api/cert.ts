@@ -1,39 +1,27 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import fs from "node:fs";
-import path from "node:path";
+/**
+ * api/cert.ts
+ * Pure Node handler — no Express methods, no @vercel/node runtime deps.
+ */
 
-function findCert(): string | null {
-  const candidates = [
-    path.join(process.cwd(), "certs", "digital-certificate.txt"),
-    path.join("/var/task", "certs", "digital-certificate.txt"),
-    path.join(__dirname, "..", "certs", "digital-certificate.txt"),
-    path.join(__dirname, "certs", "digital-certificate.txt")
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
+import type { IncomingMessage, ServerResponse } from "node:http";
 
-export default function handler(_req: VercelRequest, res: VercelResponse) {
-  const filePath = findCert();
+export default function handler(
+  _req: IncomingMessage,
+  res: ServerResponse
+): void {
+  const raw = process.env.QZ_CERTIFICATE;
 
-  if (!filePath) {
+  if (!raw) {
     res.statusCode = 500;
-    res.setHeader("Content-Type", "text/plain");
-    res.end("digital-certificate.txt not found. Check that certs/ is committed.");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.end("QZ_CERTIFICATE env var missing");
     return;
   }
 
-  try {
-    const cert = fs.readFileSync(filePath, "utf8");
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/plain");
-    res.end(cert);
-  } catch (err) {
-    console.error("Cert read error:", err);
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "text/plain");
-    res.end("Could not read certificate file.");
-  }
+  /* Support both real newlines and literal "\n" */
+  const cert = raw.replace(/\\n/g, "\n");
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  res.end(cert);
 }

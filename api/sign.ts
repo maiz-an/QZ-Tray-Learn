@@ -1,53 +1,48 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+/**
+ * api/sign.ts
+ * Pure Node handler — signs with process.env.QZ_PRIVATE_KEY.
+ */
+
+import type { IncomingMessage, ServerResponse } from "node:http";
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
 
-function findPrivateKey(): string | null {
-  const candidates = [
-    path.join(process.cwd(), "certs", "private-key.pem"),
-    path.join("/var/task", "certs", "private-key.pem"),
-    path.join(__dirname, "..", "certs", "private-key.pem"),
-    path.join(__dirname, "certs", "private-key.pem")
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
-
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  const request = String(req.query?.request ?? "");
+export default function handler(
+  req: IncomingMessage,
+  res: ServerResponse
+): void {
+  /* Parse ?request=... from req.url */
+  const url = new URL(req.url ?? "/", "http://localhost");
+  const request = url.searchParams.get("request") ?? "";
 
   if (!request) {
     res.statusCode = 400;
-    res.setHeader("Content-Type", "text/plain");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.end("Missing request parameter");
     return;
   }
 
-  const keyPath = findPrivateKey();
-  if (!keyPath) {
+  const raw = process.env.QZ_PRIVATE_KEY;
+  if (!raw) {
     res.statusCode = 500;
-    res.setHeader("Content-Type", "text/plain");
-    res.end("private-key.pem not found. Check that certs/ is committed.");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.end("QZ_PRIVATE_KEY env var missing");
     return;
   }
 
   try {
-    const privateKey = fs.readFileSync(keyPath, "utf8");
+    const key = raw.replace(/\\n/g, "\n");
     const signer = crypto.createSign("RSA-SHA512");
     signer.update(request);
     signer.end();
-    const signature = signer.sign(privateKey, "base64");
+    const signature = signer.sign(key, "base64");
 
     res.statusCode = 200;
-    res.setHeader("Content-Type", "text/plain");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.end(signature);
   } catch (err) {
     console.error("Signing error:", err);
     res.statusCode = 500;
-    res.setHeader("Content-Type", "text/plain");
-    res.end("Signing failed. Check that private-key.pem is a valid PEM.");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.end("Signing failed: " + (err as Error).message);
   }
 }
