@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+
+  --void: #0a0503;
+  --panel: #150908;
+  --panel-2: #1c0d0a;
+  --line: #3a1512;
+  --line-dim: #241009;
+  --red: #ff1e1e;
+  --red-dim: #7a1512;
+  --red-glow: #ff5540;
+  --green: #39ff6a;
+  --amber: #ffb020;
+  --ink: #f3e8e4;
+  --ink-dim: #8f7570;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: #0a0503;
+  color: #f3e8e4;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ================================================================
+   H1 — glitch effect (identical to vanilla version)
+   ================================================================ */
+h1.glitch {
+  position: relative;
+  font-family: "Chakra Petch", "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 700;
+  font-size: clamp(28px, 6vw, 40px);
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+
+h1.glitch .prompt {
+  color: var(--red);
+}
+
+h1.glitch::before,
+h1.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* play once on mount */
+  h1.glitch::before {
+    color: var(--red);
+    animation: glitch-1 900ms steps(2, end) 1;
+    animation-delay: 0.15s;
+    clip-path: inset(0 0 55% 0);
+  }
+  h1.glitch::after {
+    color: var(--green);
+    animation: glitch-2 900ms steps(2, end) 1;
+    animation-delay: 0.15s;
+    clip-path: inset(55% 0 0 0);
+  }
+
+  /* replay faster on hover */
+  h1.glitch:hover::before {
+    animation: glitch-1 500ms steps(2, end) 1;
+  }
+  h1.glitch:hover::after {
+    animation: glitch-2 500ms steps(2, end) 1;
+  }
+}
+
+@keyframes glitch-1 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  10% {
+    opacity: 0.8;
+    transform: translate(-3px, -1px);
+  }
+  20% {
+    opacity: 0;
+    transform: translate(2px, 1px);
+  }
+  30% {
+    opacity: 0.6;
+    transform: translate(-2px, 0);
+  }
+  40% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes glitch-2 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  12% {
+    opacity: 0.7;
+    transform: translate(3px, 1px);
+  }
+  22% {
+    opacity: 0;
+  }
+  32% {
+    opacity: 0.5;
+    transform: translate(2px, -1px);
+  }
+  42% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ================================================================
+   Red pulsing dot (LIVE CONSOLE badge)
+   ================================================================ */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.animate-pulse-dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* ================================================================
+   Spinner
+   ================================================================ */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-fast {
+  animation: spin 0.7s linear infinite;
+}
+.animate-spin-slow {
+  animation: spin 0.75s linear infinite;
+}
+
+/* ================================================================
+   Skeleton shimmer
+   ================================================================ */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-bar {
+  height: 10px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.06) 60%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-bar-on-white {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.09) 40%,
+    rgba(0, 0, 0, 0.13) 50%,
+    rgba(0, 0, 0, 0.09) 60%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Hide scrollbars in the preview modal while keeping scroll */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

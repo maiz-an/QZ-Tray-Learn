@@ -1,21 +1,9 @@
 {
   "name": "qz-tray-learn",
+  "private": true,
   "version": "1.0.0",
-  "description": "A minimal, open-source Express + QZ Tray example: connect, list printers, and silently print an 80mm test receipt.",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "keywords": [
-    "qz-tray",
-    "printing",
-    "receipt-printer",
-    "pos",
-    "80mm",
-    "thermal-printer",
-    "express"
-  ],
+  "type": "module",
+  "description": "Modern React + Vite + TypeScript + Tailwind example for silent 80mm receipt printing over QZ Tray. Works locally (Express) and on Vercel (serverless).",
   "author": "maiz-an",
   "license": "MIT",
   "repository": {
@@ -26,11 +14,36 @@
   "bugs": {
     "url": "https://github.com/maiz-an/QZ-Tray-Learn/issues"
   },
-  "type": "commonjs",
   "engines": {
     "node": ">=18"
   },
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "vite",
+    "build": "tsc -b && vite build",
+    "start": "tsx server/index.ts",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8"
   }
 }
