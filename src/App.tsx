@@ -8,6 +8,7 @@ import { PrinterPanel } from "@/components/PrinterPanel";
 import { PrintCards } from "@/components/PrintCards";
 import { PreviewModal, type PreviewKind } from "@/components/PreviewModal";
 import { InfoPanel } from "@/components/InfoPanel";
+import { Footer } from "@/components/Footer";
 import { Toasts } from "@/components/Toasts";
 import { SectionHeading } from "@/components/ui";
 
@@ -205,6 +206,7 @@ export default function App() {
         />
 
         <InfoPanel />
+        <Footer />
       </div>
     </>
   );
