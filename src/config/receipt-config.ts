@@ -172,7 +172,7 @@ export const receiptConfig: ReceiptConfig = {
     thanks: "Thank you for dining with us",
     line2: "We look forward to serving you again",
     returnPolicy: "Items once sold cannot be returned without a valid receipt.",
-    powered: "Powered by Bizpoz"
+    powered: ""
   },
 
   ticket: {
@@ -184,7 +184,7 @@ export const receiptConfig: ReceiptConfig = {
       items: "items",
       notes: "Special instructions",
       footer: "Please prepare as ordered",
-      powered: "Powered by Bizpoz"
+      powered: ""
     },
 
     sortItemsByName: false,
