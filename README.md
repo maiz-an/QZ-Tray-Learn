@@ -328,6 +328,24 @@ This runs `npm:dev:server` (`tsx watch server/index.ts`, port `3000`) and
 `npm:dev:client` (`vite`, port `5173`) together via `concurrently`. Open
 **<http://localhost:5173>**.
 
+Expected console output from the Express side:
+
+```text
+==========================================
+ QZ-Tray-Learn  (local)
+==========================================
+
+Mode:      development
+Listening: http://localhost:3000
+Client:    http://localhost:5173 (Vite dev)
+
+⚠️  No certs found in /certs — silent printing will fail.
+```
+
+The certificate warning disappears once `certs/` has both
+`digital-certificate.txt` and `private-key.pem` — see
+[Certificate setup](#certificate-setup-for-silent-printing).
+
 **Production-style, single process:**
 
 ```bash
@@ -335,7 +353,8 @@ npm run build   # tsc -b && vite build → outputs to dist/
 npm start       # tsx server/index.ts — serves dist/ + the sign/cert/logo routes
 ```
 
-Open **<http://localhost:3000>**.
+Open **<http://localhost:3000>**. Console output is the same as above, but
+with `Mode: production` and `Client: served from /dist`.
 
 **Other scripts:**
 
@@ -793,4 +812,5 @@ affiliated with QZ Industries, LLC.
 - QZ Tray: <https://qz.io>
 - QZ Tray — Getting Started: <https://qz.io/docs/getting-started>
 - QZ Tray — Signing: <https://qz.io/docs/signing>
+- QZ Tray — Generate a certificate: <https://qz.io/docs/generate-certificate>
 - QZ Tray — API Reference: <https://qz.io/api/>
