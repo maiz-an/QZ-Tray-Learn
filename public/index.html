@@ -155,7 +155,6 @@
   .info a:hover{ border-bottom-color:var(--red-glow); }
   .info b{ color:var(--ink); }
 
-  /* ---------- toasts ---------- */
   #toast-container{
     position:fixed; top:18px; right:18px; z-index:9999;
     display:flex; flex-direction:column; gap:8px;
@@ -177,7 +176,6 @@
   .toast-title::before{ content:"> "; color:var(--ink-dim); }
   .toast-body{ color:var(--ink-dim); word-break:break-word; }
 
-  /* ---------- preview modal ---------- */
   .modal{
     position:fixed; inset:0; z-index:9998;
     background:rgba(0,0,0,.85); display:none;
@@ -185,14 +183,9 @@
     padding:24px; backdrop-filter:blur(6px);
   }
   .modal.show{ display:flex; }
-
-  /* modal-card has NO fixed height — it grows / shrinks with content.
-     max-height:92vh caps it so tall receipts scroll instead of
-     pushing past the viewport. */
   .modal-card{
     background:var(--panel); border:1px solid var(--line);
-    width:min(520px,100%);
-    max-height:92vh;
+    width:min(520px,100%); max-height:92vh;
     display:flex; flex-direction:column;
     box-shadow: 0 24px 80px rgba(0,0,0,.7),
                 0 0 0 1px rgba(255,30,30,.08),
@@ -210,31 +203,19 @@
     content:""; width:6px; height:6px; border-radius:50%;
     background:var(--red); box-shadow:0 0 8px 1px var(--red);
   }
-
-  /* modal-body shrinks to content when short, scrolls when tall */
   .modal-body{
     flex:0 1 auto;
     overflow-y:auto; overflow-x:hidden;
-    background:#0d0402;
-    padding:24px 24px;
+    background:#0d0402; padding:24px;
     display:flex; justify-content:center; align-items:flex-start;
     background-image: radial-gradient(circle at 50% 0%, rgba(255,30,30,.05), transparent 60%);
-    /* hidden scrollbar, scroll still works */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: none; -ms-overflow-style: none;
   }
   .modal-body::-webkit-scrollbar{ display:none; }
-
-  /* iframe height is set by JS to match the receipt content exactly.
-     A small default prevents a flash of 0-height before JS runs. */
   .modal-body iframe{
-    width:72mm;
-    min-width:260px;
-    max-width:100%;
-    height:1px;                 /* overridden by JS after load */
-    margin:0 auto;
-    border:0; display:block; background:#fff; border-radius:2px;
-    overflow:hidden;
+    width:72mm; min-width:260px; max-width:100%;
+    height:1px; margin:0 auto; border:0; display:block;
+    background:#fff; border-radius:2px; overflow:hidden;
     box-shadow: 0 0 0 1px rgba(0,0,0,.6),
                 0 18px 50px rgba(0,0,0,.75),
                 0 0 90px rgba(255,30,30,.08);
@@ -244,7 +225,6 @@
 
 <body>
 
-<!-- decorative background -->
 <svg class="web-bg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 100 100" preserveAspectRatio="none">
   <defs>
@@ -280,7 +260,6 @@
 <div class="scanlines"></div>
 <div id="toast-container"></div>
 
-<!-- preview modal -->
 <div id="preview-modal" class="modal" onclick="if(event.target===this) closePreview()">
   <div class="modal-card">
     <div class="modal-head">
@@ -435,13 +414,7 @@ async function getPrinters() {
 }
 
 /* =========================================================
-   PREVIEW — dynamic height, no fixed minimum
-   ---------------------------------------------------------
-   The iframe is sized to the receipt's exact content height
-   after load. A ResizeObserver keeps it in sync when late
-   assets (logo) change the height. The modal-card then
-   grows/shrinks to match; tall receipts scroll inside the
-   modal (capped by max-height:92vh).
+   PREVIEW — dynamic height
    ========================================================= */
 let _previewRO = null;
 
@@ -452,15 +425,12 @@ function fitPreviewFrame() {
     const doc  = frame.contentDocument;
     const body = doc.body;
     if (!body) return;
-
     const h = Math.max(
-      doc.documentElement.scrollHeight,
-      doc.documentElement.offsetHeight,
-      body.scrollHeight,
-      body.offsetHeight
+      doc.documentElement.scrollHeight, doc.documentElement.offsetHeight,
+      body.scrollHeight, body.offsetHeight
     );
     if (h > 0) frame.style.height = h + "px";
-  } catch (e) { /* ignore cross-doc errors */ }
+  } catch (e) {}
 }
 
 async function previewReceipt() {
@@ -468,33 +438,25 @@ async function previewReceipt() {
     const html  = window.buildReceiptHtml("(preview)", null);
     const frame = document.getElementById("preview-frame");
 
-    /* tear down any previous observer */
     if (_previewRO) { _previewRO.disconnect(); _previewRO = null; }
 
-    /* load receipt */
     await new Promise((resolve) => {
       frame.onload = () => resolve();
       frame.srcdoc = html;
     });
 
-    /* wait a tick for fonts to apply */
     await new Promise(r => setTimeout(r, 120));
-
-    /* size it to content */
     fitPreviewFrame();
 
-    /* keep it in sync if the logo (or anything else) changes height later */
     try {
       const doc = frame.contentDocument;
       if (window.ResizeObserver && doc && doc.body) {
         _previewRO = new ResizeObserver(() => fitPreviewFrame());
         _previewRO.observe(doc.body);
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
 
     document.getElementById("preview-modal").classList.add("show");
-
-    /* some browsers need a nudge after display:flex becomes visible */
     requestAnimationFrame(fitPreviewFrame);
     setTimeout(fitPreviewFrame, 250);
   } catch (error) {
@@ -510,13 +472,12 @@ function closePreview() {
   frame.srcdoc = "";
   frame.style.height = "1px";
 }
-
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePreview();
 });
 
 /* =========================================================
-   INLINE EXTERNAL IMAGES
+   HELPERS — inline logo
    ========================================================= */
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -540,7 +501,7 @@ async function inlineExternalImages(html) {
       const b = await r.blob();
       img.setAttribute("src", await blobToDataUrl(b));
     } catch (e) {
-      console.warn("browser couldn't inline logo, leaving URL for QZ:", src);
+      console.warn("logo could not be inlined, leaving URL for QZ:", src);
     }
   }));
 
@@ -548,7 +509,7 @@ async function inlineExternalImages(html) {
 }
 
 /* =========================================================
-   MEASURE RECEIPT HEIGHT (for printing)
+   MEASURE RECEIPT HEIGHT
    ========================================================= */
 function measureReceiptHeightMm(html, widthMm) {
   return new Promise((resolve) => {
@@ -573,7 +534,12 @@ function measureReceiptHeightMm(html, widthMm) {
 }
 
 /* =========================================================
-   PRINT 80mm
+   PRINT 80mm — plain HTML path (the one that worked before)
+   ---------------------------------------------------------
+   What makes it crisp:
+     • NO colorType:"blackwhite"  → keeps anti-aliased edges
+     • density:203 matches the printer so QZ renders native
+     • width:72mm = printable area of an 80mm thermal
    ========================================================= */
 async function print80mm(printerName, btn) {
   console.log("Print 80mm →", printerName);
@@ -600,6 +566,8 @@ async function print80mm(printerName, btn) {
       scaleContent:  true,
       density:       PRINTER_DENSITY,
       interpolation: "bicubic"
+      /* NO colorType — keeps anti-aliased glyph edges */
+      /* NO orientation — QZ silently swaps w/h when set */
     });
 
     const data = [{

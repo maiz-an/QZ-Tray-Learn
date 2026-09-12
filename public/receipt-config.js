@@ -10,11 +10,17 @@ window.RECEIPT_CONFIG = {
 
   /* =============================================================
      PRINTER
+     -------------------------------------------------------------
+     threshold = pixel darkness cutoff for the raster path.
+       Lower  (e.g. 160) → thinner strokes, lighter look
+       Higher (e.g. 210) → thicker strokes, darker look
+       190 is a good default for 80mm thermals.
      ============================================================= */
   printer: {
-    density:  203,
-    widthMm:  72,
-    scale:    4
+    density:   203,
+    widthMm:   72,
+    scale:     4,      // 4× = 384 DPI bitmap
+    threshold: 128
   },
 
   /* =============================================================
@@ -60,17 +66,15 @@ window.RECEIPT_CONFIG = {
 
     arabicFont: "'Tahoma', 'Segoe UI', 'Simplified Arabic', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', sans-serif",
 
-    /* Latin + Arabic weights */
-    itemPriceSize:        "9pt",   // smaller than item name (was 10pt shared)
-    itemPriceWeight:      "700",   // a touch bolder (was 600)
+    itemPriceSize:        "9pt",
+    itemPriceWeight:      "700",
     arabicWeightHead:     "700",
     arabicWeightBody:     "600",
-    arabicWeightCurrency: "700",   // ر.ق matches item price weight
+    arabicWeightCurrency: "700",
     arabicWeightGrand:    "500",
     arabicWeightItemName: "500",
     arabicWeightSmall:    "500",
 
-    /* header */
     businessNameSize:   "20pt",
     businessNameArSize: "15pt",
     taglineSize:        "7pt",
@@ -79,33 +83,26 @@ window.RECEIPT_CONFIG = {
     logoHeight:         "16mm",
     showLogo:           true,
 
-    /* section labels */
     sectionSize:      "7pt",
     sectionTopGap:    "4mm",
 
-    /* order meta table */
     orderLineSize:    "9pt",
 
-    /* meta rows */
     metaSize:         "8.5pt",
     smallMetaSize:    "7.5pt",
     rowSpacing:       "1.1mm",
 
-    /* items */
     itemNameSize:     "10pt",
     itemNameArSize:   "8pt",
     itemMetaSize:     "7.5pt",
     itemPadding:      "2mm",
 
-    /* subtotal block spacing */
-    subtotalTopGap:   "3mm",   // bigger gap above Subtotal row
+    subtotalTopGap:   "3mm",
 
-    /* totals */
     grandLabelSize:   "11pt",
     grandArSize:      "11pt",
     grandTotalSize:   "16pt",
 
-    /* footer */
     thanksSize:       "10pt",
     footerArSize:     "9.5pt",
     smallArSize:      "8.5pt",
