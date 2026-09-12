@@ -90,6 +90,17 @@ export default function App() {
     });
   }, [print, receiptPrinter]);
 
+  const handlePrintBill = useCallback(async () => {
+    const html = buildReceiptHtml({ mode: "bill" });
+    await print({
+      printerName: receiptPrinter,
+      html,
+      density: receiptConfig.printer.density,
+      widthMm: receiptConfig.printer.widthMm,
+      label: "bill"
+    });
+  }, [print, receiptPrinter]);
+
   const handlePrintTicket = useCallback(async () => {
     const html = buildTicketHtml();
     await print({
@@ -98,6 +109,17 @@ export default function App() {
       density: receiptConfig.printer.density,
       widthMm: receiptConfig.printer.widthMm,
       label: "order ticket"
+    });
+  }, [print, ticketPrinter]);
+
+  const handlePrintCancellation = useCallback(async () => {
+    const html = buildTicketHtml({ mode: "cancellation" });
+    await print({
+      printerName: ticketPrinter,
+      html,
+      density: receiptConfig.printer.density,
+      widthMm: receiptConfig.printer.widthMm,
+      label: "cancellation ticket"
     });
   }, [print, ticketPrinter]);
 
@@ -124,6 +146,12 @@ export default function App() {
     if (!previewKind) return "";
     if (previewKind === "receipt") {
       return withPreviewCentering(buildReceiptHtml());
+    }
+    if (previewKind === "bill") {
+      return withPreviewCentering(buildReceiptHtml({ mode: "bill" }));
+    }
+    if (previewKind === "cancellation") {
+      return buildTicketHtml({ mode: "cancellation" });
     }
     return buildTicketHtml();
   })();
@@ -167,9 +195,13 @@ export default function App() {
           receiptPrinter={receiptPrinter}
           ticketPrinter={ticketPrinter}
           onPreviewReceipt={() => handlePreview("receipt")}
+          onPreviewBill={() => handlePreview("bill")}
           onPreviewTicket={() => handlePreview("ticket")}
+          onPreviewCancellation={() => handlePreview("cancellation")}
           onPrintReceipt={handlePrintReceipt}
+          onPrintBill={handlePrintBill}
           onPrintTicket={handlePrintTicket}
+          onPrintCancellation={handlePrintCancellation}
         />
 
         <InfoPanel />

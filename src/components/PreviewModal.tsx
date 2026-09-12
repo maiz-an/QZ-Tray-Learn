@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
-export type PreviewKind = "receipt" | "ticket";
+export type PreviewKind = "receipt" | "bill" | "ticket" | "cancellation";
 
 interface PreviewModalProps {
   kind: PreviewKind | null;
@@ -144,7 +144,13 @@ export function PreviewModal({
     return null;
   }
 
-  const title = kind === "ticket" ? "TICKET PREVIEW" : "RECEIPT PREVIEW";
+  const titles: Record<PreviewKind, string> = {
+    receipt: "RECEIPT PREVIEW",
+    bill: "BILL PREVIEW",
+    ticket: "TICKET PREVIEW",
+    cancellation: "CANCELLATION PREVIEW"
+  };
+  const title = titles[kind];
 
   return (
     /* ==============================================================

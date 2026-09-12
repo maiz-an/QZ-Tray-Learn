@@ -3,14 +3,24 @@ import { esc, timeOnly } from "./shared";
 
 export interface TicketOptions {
   label?: string;
+  /** "cancellation" renders a void/cancellation ticket instead of a KOT. */
+  mode?: "kot" | "cancellation";
+  /** Cancellation reason — falls back to order.notes, then config.cancellation.reason. */
+  reason?: string;
 }
 
 /**
  * Build the order ticket HTML (KOT / BOT / any prep station).
  * No prices. Big quantity markers. Per-item notes as callouts.
+ *
+ * Pass `{ mode: "cancellation" }` to render a cancellation ticket
+ * instead: same item list, plus a "do not prepare" warning banner,
+ * struck-through item names, and a reason box.
  */
 export function buildTicketHtml(opts: TicketOptions = {}): string {
+  const isCancellation = opts.mode === "cancellation";
   const C = receiptConfig;
+  const CX = C.cancellation;
   const T = C.ticket;
   const TS = T.style;
   const TL = T.labels;
@@ -26,7 +36,9 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
   const totalQty = items.reduce((n, it) => n + (Number(it.qty) || 0), 0);
 
   /* ---------- header ---------- */
-  const badgeLabel = String(opts.label || TH.label || "KOT").toUpperCase();
+  const badgeLabel = String(
+    opts.label || (isCancellation ? CX.header.label : TH.label) || (isCancellation ? "CANCELLED" : "KOT")
+  ).toUpperCase();
   const orderNumber = O.number || O.orderId || "";
 
   const typeBits = [
@@ -45,6 +57,11 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
     </header>
   `;
 
+  /* ---------- cancellation warning banner ---------- */
+  const cancelWarningHtml = isCancellation
+    ? `<div class="tk-cancel-warn">${esc(CX.labels.warning || "Do not prepare or serve these items")}</div>`
+    : "";
+
   /* ---------- items ---------- */
   const itemsHtml = items.length
     ? items
@@ -61,7 +78,7 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
           const noteHtml = note ? `<div class="tk-item-note">${esc(note)}</div>` : "";
 
           return `
-            <div class="tk-item">
+            <div class="tk-item${isCancellation ? " tk-item-void" : ""}">
               ${qty ? `<div class="tk-qty">${esc(qty)}&times;</div>` : `<div class="tk-qty">·</div>`}
               <div class="tk-item-body">
                 <div class="tk-item-name">${esc(name)}</div>
@@ -73,20 +90,27 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
         .join("")
     : `<div class="tk-empty">No items</div>`;
 
-  /* ---------- notes box ---------- */
-  const notesText = String(O.notes || T.notes || "").trim();
+  /* ---------- notes / reason box ---------- */
+  const notesLabel = isCancellation ? CX.labels.reason || "Reason" : TL.notes || "Special instructions";
+  const notesText = isCancellation
+    ? String(opts.reason || O.notes || CX.reason || "").trim()
+    : String(O.notes || T.notes || "").trim();
   const notesHtml = notesText
     ? `
     <div class="tk-notes">
-      <div class="tk-notes-label">${esc(TL.notes || "Special instructions")}</div>
+      <div class="tk-notes-label">${esc(notesLabel)}</div>
       <div class="tk-notes-body">${esc(notesText)}</div>
     </div>`
     : "";
 
   /* ---------- footer ---------- */
   const footerCount = totalQty ? `${totalQty} ${TL.items || "items"}` : "";
-  const footerThanks = TL.footer || "Please prepare as ordered";
-  const footerPowered = TL.powered || (C.footer && C.footer.powered) || "";
+  const footerThanks = isCancellation
+    ? CX.labels.footer || "Please discard this ticket"
+    : TL.footer || "Please prepare as ordered";
+  const footerPowered = isCancellation
+    ? CX.labels.powered || (C.footer && C.footer.powered) || ""
+    : TL.powered || (C.footer && C.footer.powered) || "";
 
   const footerHtml = `
     <footer class="tk-footer">
@@ -101,7 +125,7 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
 <html>
 <head>
 <meta charset="utf-8">
-<title>Order Ticket</title>
+<title>${isCancellation ? "Cancellation Ticket" : "Order Ticket"}</title>
 <style>
   @page { margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
@@ -183,6 +207,29 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
   }
 
   .tk-items { margin-bottom: 1mm; }
+
+  .tk-cancel-warn {
+    margin: 0 0 4mm;
+    padding: 2.5mm 3mm;
+    border: 2px solid #000;
+    background: #000;
+    color: #fff;
+    text-align: center;
+    font-size: 11pt;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  .tk-item-void {
+    border-left: 2.5px solid #000;
+    padding-left: 2.5mm;
+  }
+  .tk-item-void .tk-item-name {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+  }
 
   .tk-item {
     display: flex;
@@ -300,6 +347,8 @@ export function buildTicketHtml(opts: TicketOptions = {}): string {
 <body>
 
   ${headerHtml}
+
+  ${cancelWarningHtml}
 
   <div class="tk-items">${itemsHtml}</div>
 

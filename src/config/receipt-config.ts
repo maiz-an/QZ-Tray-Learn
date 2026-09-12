@@ -3,9 +3,11 @@ import type { ReceiptConfig } from "./types";
 /**
  * receipt-config.ts
  * ---------------------------------------------------------------------
- *  SHARED configuration for BOTH templates:
- *    receipt-template.ts  → customer receipt (has prices)
- *    ticket-template.ts   → order ticket (KOT / BOT / prep — no prices)
+ *  SHARED configuration for ALL FOUR print templates:
+ *    receipt-template.ts       → customer receipt (has prices)
+ *    bill-template.ts          → before-payment bill (no payment section)
+ *    ticket-template.ts        → order ticket (KOT / BOT — no prices)
+ *    cancellation-template.ts  → cancellation ticket (voids an order)
  *
  *  Edit → Save → the app hot-reloads.
  * ---------------------------------------------------------------------
@@ -172,7 +174,7 @@ export const receiptConfig: ReceiptConfig = {
     thanks: "Thank you for dining with us",
     line2: "We look forward to serving you again",
     returnPolicy: "Items once sold cannot be returned without a valid receipt.",
-    powered: ""
+    powered: "Powered by Bizpoz"
   },
 
   ticket: {
@@ -184,7 +186,7 @@ export const receiptConfig: ReceiptConfig = {
       items: "items",
       notes: "Special instructions",
       footer: "Please prepare as ordered",
-      powered: ""
+      powered: "Powered by Bizpoz"
     },
 
     sortItemsByName: false,
@@ -223,5 +225,47 @@ export const receiptConfig: ReceiptConfig = {
       thanksSize: "11pt",
       poweredSize: "7pt"
     }
+  },
+
+  /* -------------------------------------------------------------
+   * "Before payment" bill — a pre-payment preview of the receipt,
+   * printed at the customer/receipt printer. Same items + totals
+   * as the receipt, but NO payment section (nothing's been paid
+   * yet) and a clear "not a valid receipt" note.
+   * ------------------------------------------------------------- */
+  bill: {
+    header: {
+      label: "BILL",
+      note: "Not a valid receipt"
+    },
+
+    labels: {
+      amountDue: { en: "AMOUNT DUE", ar: "المبلغ المستحق" }
+    },
+
+    footer: {
+      note: "Please settle at the counter to receive your official receipt.",
+      noteAr: "يرجى الدفع عند الكاونتر للحصول على الفاتورة الرسمية."
+    }
+  },
+
+  /* -------------------------------------------------------------
+   * Cancellation ticket — printed at the kitchen/ticket printer to
+   * void an order that's already been sent to prep. Same item list
+   * as the order ticket, with a "do not prepare" warning banner and
+   * an optional reason.
+   * ------------------------------------------------------------- */
+  cancellation: {
+    header: { label: "CANCELLED" },
+
+    labels: {
+      reason: "Reason",
+      items: "items",
+      footer: "Please discard this ticket",
+      powered: "Powered by Bizpoz",
+      warning: "Do not prepare or serve these items"
+    },
+
+    reason: ""
   }
 };

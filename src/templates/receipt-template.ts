@@ -14,8 +14,17 @@ import {
  * Build the customer receipt HTML (with prices).
  * Returned as a complete document string — used for both the preview
  * iframe and the print job that goes to QZ Tray.
+ *
+ * Pass `{ mode: "bill" }` to render the same layout as a "before
+ * payment" bill instead: no payment section, and a clear banner
+ * marking it as not a valid receipt yet.
  */
-export function buildReceiptHtml(): string {
+export interface ReceiptOptions {
+  mode?: "receipt" | "bill";
+}
+
+export function buildReceiptHtml(opts: ReceiptOptions = {}): string {
+  const isBill = opts.mode === "bill";
   const C = receiptConfig;
   const S = C.style;
   const B = C.business;
@@ -23,6 +32,7 @@ export function buildReceiptHtml(): string {
   const CU = C.customer;
   const F = C.footer;
   const LOC = C.locale;
+  const BILL = C.bill;
 
   /* ---------- math ---------- */
   let subtotal = 0;
@@ -78,6 +88,15 @@ export function buildReceiptHtml(): string {
       }
     </header>
   `;
+
+  /* ---------- bill banner (only in "bill" mode) ---------- */
+  const billBannerHtml = isBill
+    ? `
+    <div class="bill-banner">
+      <div class="bill-banner-label">${esc(BILL.header.label || "BILL")}</div>
+      ${BILL.header.note ? `<div class="bill-banner-note">${esc(BILL.header.note)}</div>` : ""}
+    </div>`
+    : "";
 
   /* ---------- order — table OR type ---------- */
   const hasOrder = !!(O.number || O.type || O.cashier || O.terminal || O.table);
@@ -151,8 +170,12 @@ export function buildReceiptHtml(): string {
       moneyHtml(tax, curEn)
     );
 
-  const totalEn = (LOC.total && LOC.total.en) || "TOTAL";
-  const totalAr = (LOC.total && LOC.total.ar) || "";
+  const totalEn = isBill
+    ? (BILL.labels.amountDue && BILL.labels.amountDue.en) || "AMOUNT DUE"
+    : (LOC.total && LOC.total.en) || "TOTAL";
+  const totalAr = isBill
+    ? (BILL.labels.amountDue && BILL.labels.amountDue.ar) || ""
+    : (LOC.total && LOC.total.ar) || "";
   const grandArHtml = ar(C, totalAr, "grand-arabic");
 
   const totalsSection = `
@@ -169,7 +192,7 @@ export function buildReceiptHtml(): string {
     </div>
   `;
 
-  /* ---------- payment ---------- */
+  /* ---------- payment (never shown on a pre-payment bill) ---------- */
   const payTime = timeOnly(O.payTime || O.printTime || O.orderTime || "");
   const payLabel = payTime ? `Payment · ${payTime}` : "Payment";
 
@@ -177,7 +200,9 @@ export function buildReceiptHtml(): string {
     Array.isArray(O.payments) && O.payments.length ? O.payments : null;
 
   let paymentHtml = "";
-  if (paymentsList) {
+  if (isBill) {
+    paymentHtml = "";
+  } else if (paymentsList) {
     const rows = paymentsList
       .map((p) => kvHtml(p.method || "", moneyHtml(Number(p.amount) || 0, curEn)))
       .join("");
@@ -214,15 +239,23 @@ export function buildReceiptHtml(): string {
     : "";
 
   /* ---------- footer ---------- */
-  const thanksEn = F.thanks || "";
-  const lineEn = F.line2 || "";
-  const policyEn = F.returnPolicy || "";
-  const thanksAr = (LOC.thanks && LOC.thanks.ar) || "";
-  const visitAr = (LOC.visitAgain && LOC.visitAgain.ar) || "";
-  const policyAr = (LOC.returnNote && LOC.returnNote.ar) || "";
+  const thanksEn = isBill ? "" : F.thanks || "";
+  const lineEn = isBill ? "" : F.line2 || "";
+  const policyEn = isBill ? "" : F.returnPolicy || "";
+  const thanksAr = isBill ? "" : (LOC.thanks && LOC.thanks.ar) || "";
+  const visitAr = isBill ? "" : (LOC.visitAgain && LOC.visitAgain.ar) || "";
+  const policyAr = isBill ? "" : (LOC.returnNote && LOC.returnNote.ar) || "";
+
+  const billNoteHtml = isBill
+    ? `
+      ${BILL.footer.note ? `<div class="thanks">${esc(BILL.footer.note)}</div>` : ""}
+      ${ar(C, BILL.footer.noteAr, "thanks-ar")}
+    `
+    : "";
 
   const footerHtml = `
     <footer class="footer">
+      ${billNoteHtml}
       ${thanksEn ? `<div class="thanks">${esc(thanksEn)}</div>` : ""}
       ${ar(C, thanksAr, "thanks-ar")}
       ${lineEn ? `<div class="footer-line">${esc(lineEn)}</div>` : ""}
@@ -238,7 +271,7 @@ export function buildReceiptHtml(): string {
 <html>
 <head>
 <meta charset="utf-8">
-<title>Receipt</title>
+<title>${isBill ? "Bill" : "Receipt"}</title>
 <style>
   @page { margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
@@ -285,6 +318,28 @@ export function buildReceiptHtml(): string {
   }
 
   .header { text-align: center; }
+
+  .bill-banner {
+    margin: 3.5mm 0 0;
+    padding: 2mm 3mm;
+    border: 1.5px solid #000;
+    text-align: center;
+  }
+  .bill-banner-label {
+    font-size: 11pt;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #000;
+  }
+  .bill-banner-note {
+    margin-top: 0.8mm;
+    font-size: 7.5pt;
+    font-style: italic;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: #444;
+  }
 
   .logo {
     display: block; width: ${S.logoWidth || "16mm"};
@@ -552,6 +607,7 @@ export function buildReceiptHtml(): string {
 <body>
 
   ${headerHtml}
+  ${billBannerHtml}
   ${orderHtml}
   ${customerHtml}
   ${itemsSection}

@@ -184,6 +184,40 @@ export interface TicketConfig {
   style: TicketStyleConfig;
 }
 
+export interface BillHeaderConfig {
+  label: string;
+  note: string;
+}
+
+export interface BillLabels {
+  amountDue: LocaleStringPair;
+}
+
+export interface BillFooterConfig {
+  note: string;
+  noteAr: string;
+}
+
+export interface BillConfig {
+  header: BillHeaderConfig;
+  labels: BillLabels;
+  footer: BillFooterConfig;
+}
+
+export interface CancellationLabels {
+  reason: string;
+  items: string;
+  footer: string;
+  powered: string;
+  warning: string;
+}
+
+export interface CancellationConfig {
+  header: { label: string };
+  labels: CancellationLabels;
+  reason: string;
+}
+
 export interface ReceiptConfig {
   printer: PrinterConfig;
   business: BusinessConfig;
@@ -197,4 +231,6 @@ export interface ReceiptConfig {
   taxRate: number;
   footer: FooterConfig;
   ticket: TicketConfig;
+  bill: BillConfig;
+  cancellation: CancellationConfig;
 }
