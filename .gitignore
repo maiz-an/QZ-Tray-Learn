@@ -3,7 +3,7 @@ dist/
 .vite/
 .vercel/
 
-# .env files stay secret
+certs/
 .env
 .env.local
 .env.*.local
