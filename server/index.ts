@@ -1,20 +1,24 @@
 /**
- * Local Express server — for `npm run dev` and `npm start`.
- * Not used by Vercel (that runs api/*.ts instead).
+ * QZ-Tray-Learn — local Express server
+ * Reads config from .env.local
  */
 
-import express, { type Request, type Response, type NextFunction } from "express";
-import crypto from "node:crypto";
-import fs from "node:fs";
+import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const ROOT = path.resolve(__dirname, "..");
 
-const BASE_DIR = path.resolve(__dirname, "..");
-const DIST_DIR = path.join(BASE_DIR, "dist");
-const CERTS_DIR = path.join(BASE_DIR, "certs");
+dotenv.config({ path: path.join(ROOT, ".env.local") });
+
+import express, { type Request, type Response, type NextFunction } from "express";
+import crypto from "node:crypto";
+import fs from "node:fs";
+
+const DIST_DIR = path.join(ROOT, "dist");
+const CERTS_DIR = path.join(ROOT, "certs");
 
 const PORT = Number(process.env.PORT) || 3000;
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -29,7 +33,6 @@ const LOGO_URL = process.env.LOGO_URL || "";
 const app = express();
 app.disable("x-powered-by");
 
-/* CORS: allow Vite dev server on :5173 in dev; set CORS_ORIGIN in prod */
 const CORS_ORIGIN =
   process.env.CORS_ORIGIN || (IS_PROD ? "" : "http://localhost:5173");
 
@@ -48,7 +51,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-/* ---- /digital-certificate.txt ---- */
 app.get("/digital-certificate.txt", (_req: Request, res: Response) => {
   try {
     const cert = fs.readFileSync(CERT_FILE, "utf8");
@@ -65,7 +67,6 @@ app.get("/digital-certificate.txt", (_req: Request, res: Response) => {
   }
 });
 
-/* ---- /sign-message ---- */
 app.get("/sign-message", (req: Request, res: Response) => {
   try {
     const request = String(req.query.request ?? "");
@@ -92,7 +93,6 @@ app.get("/sign-message", (req: Request, res: Response) => {
   }
 });
 
-/* ---- /logo-base64 (optional) ---- */
 app.get("/logo-base64", async (_req: Request, res: Response) => {
   if (!LOGO_URL) return res.status(404).type("text/plain").send("");
   try {
@@ -106,7 +106,6 @@ app.get("/logo-base64", async (_req: Request, res: Response) => {
   }
 });
 
-/* ---- Static client (only when /dist exists) ---- */
 if (fs.existsSync(DIST_DIR)) {
   app.use(
     "/assets",
@@ -117,7 +116,6 @@ if (fs.existsSync(DIST_DIR)) {
   );
   app.use(express.static(DIST_DIR, { maxAge: IS_PROD ? "1h" : 0 }));
 
-  /* Express 5 SPA fallback — /*splat (named wildcard) */
   app.get("/*splat", (req: Request, res: Response, next: NextFunction) => {
     if (
       req.path.startsWith("/digital-certificate.txt") ||
@@ -133,19 +131,15 @@ if (fs.existsSync(DIST_DIR)) {
   });
 }
 
-/* ---- 404 + error handlers ---- */
 app.use((req: Request, res: Response) => {
   res.status(404).type("text/plain").send(`Not found: ${req.method} ${req.path}`);
 });
 
-app.use(
-  (err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error("Unhandled error:", err);
-    res.status(500).type("text/plain").send("Internal server error");
-  }
-);
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("Unhandled error:", err);
+  res.status(500).type("text/plain").send("Internal server error");
+});
 
-/* ---- Start ---- */
 const server = app.listen(PORT, () => {
   console.log("");
   console.log("==========================================");

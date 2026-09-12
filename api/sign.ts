@@ -1,32 +1,44 @@
 import type { Request, Response } from "express";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+
+function findPrivateKey(): string | null {
+  const candidates = [
+    path.join(process.cwd(), "certs", "private-key.pem"),
+    path.join("/var/task", "certs", "private-key.pem"),
+    path.join(__dirname, "..", "certs", "private-key.pem"),
+    path.join(__dirname, "certs", "private-key.pem")
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
 
 export default function handler(req: Request, res: Response) {
   const request = String(req.query.request ?? "");
-
   if (!request) {
     return res.status(400).type("text/plain").send("Missing request parameter");
   }
 
-  const rawKey = process.env.QZ_PRIVATE_KEY;
-  if (!rawKey) {
+  const keyPath = findPrivateKey();
+  if (!keyPath) {
     return res
       .status(500)
       .type("text/plain")
       .send(
-        "QZ_PRIVATE_KEY env var missing. Add it in Vercel → Settings → " +
-          "Environment Variables (paste the full private-key.pem)."
+        "private-key.pem not found. Make sure the certs/ folder is committed " +
+          "and vercel.json includes it (functions.includeFiles)."
       );
   }
 
   try {
-    /* Some Vercel UIs flatten multiline values — unescape if needed. */
-    const key = rawKey.replace(/\\n/g, "\n");
-
+    const privateKey = fs.readFileSync(keyPath, "utf8");
     const signer = crypto.createSign("RSA-SHA512");
     signer.update(request);
     signer.end();
-    const signature = signer.sign(key, "base64");
+    const signature = signer.sign(privateKey, "base64");
 
     res.type("text/plain").send(signature);
   } catch (err) {
@@ -34,6 +46,6 @@ export default function handler(req: Request, res: Response) {
     res
       .status(500)
       .type("text/plain")
-      .send("Signing failed. Check that QZ_PRIVATE_KEY is a valid PEM.");
+      .send("Signing failed. Check that private-key.pem is a valid PEM file.");
   }
 }
