@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QZ-Tray Learn // silent print console</title>
 
-<!-- QZ Tray favicon -->
 <link rel="icon" type="image/x-icon" href="https://qz.io/favicon.ico">
 <link rel="shortcut icon" type="image/x-icon" href="https://qz.io/favicon.ico">
 <link rel="apple-touch-icon" href="https://qz.io/favicon.ico">
@@ -16,87 +15,52 @@
 
 <style>
   :root{
-    --void:      #0a0503;
-    --panel:     #150908;
-    --panel-2:   #1c0d0a;
-    --line:      #3a1512;
-    --line-dim:  #241009;
-    --red:       #ff1e1e;
-    --red-dim:   #7a1512;
-    --red-glow:  #ff5540;
-    --green:     #39ff6a;
-    --amber:     #ffb020;
-    --ink:       #f3e8e4;
-    --ink-dim:   #8f7570;
-    --mono: 'JetBrains Mono', ui-monospace, monospace;
-    --disp: 'Chakra Petch', var(--mono);
+    --void:#0a0503; --panel:#150908; --panel-2:#1c0d0a;
+    --line:#3a1512; --line-dim:#241009;
+    --red:#ff1e1e; --red-dim:#7a1512; --red-glow:#ff5540;
+    --green:#39ff6a; --amber:#ffb020;
+    --ink:#f3e8e4; --ink-dim:#8f7570;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --disp:'Chakra Petch', var(--mono);
   }
-
   *{ box-sizing: border-box; }
-
   html,body{
-    margin:0;
-    min-height:100%;
-    background: var(--void);
-    color: var(--ink);
+    margin:0; min-height:100%;
+    background: var(--void); color: var(--ink);
     font-family: var(--mono);
   }
-
   body{ position:relative; overflow-x:hidden; }
 
-  .web-bg{
-    position:fixed; inset:0; z-index:0;
-    pointer-events:none; opacity:.55;
-  }
-
+  .web-bg{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.55; }
   .scanlines{
     position:fixed; inset:0; z-index:1; pointer-events:none;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgba(255,255,255,0.018) 0px,
-      rgba(255,255,255,0.018) 1px,
-      transparent 1px,
-      transparent 3px
-    );
+    background: repeating-linear-gradient(to bottom,
+      rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px,
+      transparent 1px, transparent 3px);
     mix-blend-mode: overlay;
   }
-
-  .wrap{
-    position:relative; z-index:2;
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 56px 20px 80px;
-  }
-
-  header{ margin-bottom: 34px; }
+  .wrap{ position:relative; z-index:2; max-width:760px; margin:0 auto; padding:56px 20px 80px; }
+  header{ margin-bottom:34px; }
 
   .rec{
     display:inline-flex; align-items:center; gap:7px;
-    font-size:11px; letter-spacing:.08em;
-    color: var(--red-glow);
-    border:1px solid var(--red-dim);
-    padding: 4px 9px 4px 7px;
-    border-radius: 3px;
-    background: rgba(255,30,30,0.06);
-    margin-bottom:18px;
+    font-size:11px; letter-spacing:.08em; color:var(--red-glow);
+    border:1px solid var(--red-dim); padding:4px 9px 4px 7px;
+    border-radius:3px; background:rgba(255,30,30,0.06); margin-bottom:18px;
   }
   .rec .dot{
     width:6px; height:6px; border-radius:50%;
-    background: var(--red);
-    box-shadow: 0 0 8px 1px var(--red);
-    animation: pulse 1.6s ease-in-out infinite;
+    background:var(--red); box-shadow:0 0 8px 1px var(--red);
+    animation:pulse 1.6s ease-in-out infinite;
   }
-  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.25; } }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
 
   h1{
-    font-family: var(--disp);
-    font-weight: 700;
-    font-size: clamp(28px, 6vw, 40px);
-    letter-spacing: .01em;
-    margin: 0 0 4px;
-    line-height: 1.05;
+    font-family:var(--disp); font-weight:700;
+    font-size:clamp(28px,6vw,40px); letter-spacing:.01em;
+    margin:0 0 4px; line-height:1.05;
   }
-  h1 .prompt{ color: var(--red); }
+  h1 .prompt{ color:var(--red); }
   h1.glitch{ position:relative; }
   h1.glitch::before,
   h1.glitch::after{
@@ -140,216 +104,163 @@
     100%{ opacity:0; }
   }
 
-  .subtitle{
-    color: var(--ink-dim);
-    font-size: 13.5px;
-    line-height:1.6;
-    max-width: 54ch;
-  }
-  .subtitle b{ color: var(--ink); font-weight:600; }
+  .subtitle{ color:var(--ink-dim); font-size:13.5px; line-height:1.6; max-width:54ch; }
+  .subtitle b{ color:var(--ink); font-weight:600; }
 
-  .actions{ display:flex; flex-wrap:wrap; gap:10px; margin: 26px 0 22px; }
+  .actions{ display:flex; flex-wrap:wrap; gap:10px; margin:26px 0 22px; }
 
   button{
-    font-family: var(--mono);
-    font-size: 12.5px;
-    font-weight:600;
-    letter-spacing:.03em;
-    color: var(--ink);
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    padding: 11px 16px;
-    border-radius: 3px;
-    cursor:pointer;
-    transition: border-color .15s ease, background .15s ease, transform .1s ease;
+    font-family:var(--mono); font-size:12.5px; font-weight:600;
+    letter-spacing:.03em; color:var(--ink);
+    background:var(--panel-2); border:1px solid var(--line);
+    padding:11px 16px; border-radius:3px; cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
   }
-  button:hover{ border-color: var(--red-dim); background:#241210; }
-  button:active{ transform: translateY(1px); }
+  button:hover{ border-color:var(--red-dim); background:#241210; }
+  button:active{ transform:translateY(1px); }
   button:disabled{ opacity:.4; cursor:not-allowed; }
   button:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
-
-  button.primary{ color: var(--void); background: var(--red); border-color: var(--red); }
-  button.primary:hover{ background: var(--red-glow); border-color: var(--red-glow); }
-  button.ghost{ background: transparent; }
+  button.primary{ color:var(--void); background:var(--red); border-color:var(--red); }
+  button.primary:hover{ background:var(--red-glow); border-color:var(--red-glow); }
+  button.ghost{ background:transparent; }
   button.tiny{ padding:5px 9px; font-size:11px; }
 
   .section-heading{
-    font-size: 11px;
-    letter-spacing:.14em;
-    color: var(--ink-dim);
-    margin: 30px 0 12px;
-    display:flex;
-    align-items:center;
-    gap:10px;
+    font-size:11px; letter-spacing:.14em; color:var(--ink-dim);
+    margin:30px 0 12px; display:flex; align-items:center; gap:10px;
   }
-  .section-heading::after{ content:""; flex:1; height:1px; background: var(--line-dim); }
+  .section-heading::after{ content:""; flex:1; height:1px; background:var(--line-dim); }
 
   .target{
-    position:relative;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:14px;
-    padding: 13px 16px;
-    margin-bottom: 10px;
-    background: var(--panel);
-    border: 1px solid var(--line-dim);
-    border-left: 2px solid var(--line);
-    transition: border-color .15s ease, background .15s ease;
+    position:relative; display:flex; align-items:center;
+    justify-content:space-between; gap:14px;
+    padding:13px 16px; margin-bottom:10px;
+    background:var(--panel); border:1px solid var(--line-dim);
+    border-left:2px solid var(--line);
+    transition:border-color .15s ease, background .15s ease;
   }
-  .target:hover{ border-left-color: var(--red); background: var(--panel-2); }
-  .target-id{ font-size:11px; color: var(--red-glow); margin-right:10px; letter-spacing:.05em; }
-  .target-name{ font-size:13px; font-weight:500; word-break: break-word; }
+  .target:hover{ border-left-color:var(--red); background:var(--panel-2); }
+  .target-id{ font-size:11px; color:var(--red-glow); margin-right:10px; letter-spacing:.05em; }
+  .target-name{ font-size:13px; font-weight:500; word-break:break-word; }
 
-  .empty-state{ font-size:12.5px; color: var(--ink-dim); padding: 4px 0; }
-  .empty-state::before{ content:"\25B8 "; color: var(--line); }
+  .empty-state{ font-size:12.5px; color:var(--ink-dim); padding:4px 0; }
+  .empty-state::before{ content:"\25B8 "; color:var(--line); }
 
   .info{
-    margin-top: 30px;
-    padding: 15px 18px;
-    background: var(--panel);
-    border-left: 2px solid var(--line);
-    font-size: 12px;
-    line-height:1.7;
-    color: var(--ink-dim);
+    margin-top:30px; padding:15px 18px;
+    background:var(--panel); border-left:2px solid var(--line);
+    font-size:12px; line-height:1.7; color:var(--ink-dim);
   }
-  .info a{ color: var(--red-glow); text-decoration:none; border-bottom:1px solid var(--red-dim); }
-  .info a:hover{ border-bottom-color: var(--red-glow); }
-  .info b{ color: var(--ink); }
+  .info a{ color:var(--red-glow); text-decoration:none; border-bottom:1px solid var(--red-dim); }
+  .info a:hover{ border-bottom-color:var(--red-glow); }
+  .info b{ color:var(--ink); }
 
-  /* ---------- toasts ---------- */
   #toast-container{
-    position: fixed; top: 18px; right: 18px;
-    z-index: 9999;
+    position:fixed; top:18px; right:18px; z-index:9999;
     display:flex; flex-direction:column; gap:8px;
-    max-width: 340px; pointer-events:none;
+    max-width:340px; pointer-events:none;
   }
   .toast{
-    pointer-events:auto;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--ink-dim);
-    padding: 11px 13px;
-    font-size: 12px; line-height:1.5;
-    opacity:0; transform: translateX(16px);
-    transition: opacity .2s ease, transform .2s ease;
+    pointer-events:auto; background:var(--panel-2);
+    border:1px solid var(--line); border-left:3px solid var(--ink-dim);
+    padding:11px 13px; font-size:12px; line-height:1.5;
+    opacity:0; transform:translateX(16px);
+    transition:opacity .2s ease, transform .2s ease;
   }
   .toast.show{ opacity:1; transform:translateX(0); }
-  .toast.success{ border-left-color: var(--green); }
-  .toast.error{ border-left-color: var(--red); }
-  .toast.warning{ border-left-color: var(--amber); }
-  .toast.info{ border-left-color: var(--ink-dim); }
-  .toast-title{ font-weight:600; margin-bottom:2px; color: var(--ink); }
-  .toast-title::before{ content:"> "; color: var(--ink-dim); }
-  .toast-body{ color: var(--ink-dim); word-break:break-word; }
+  .toast.success{ border-left-color:var(--green); }
+  .toast.error{ border-left-color:var(--red); }
+  .toast.warning{ border-left-color:var(--amber); }
+  .toast.info{ border-left-color:var(--ink-dim); }
+  .toast-title{ font-weight:600; margin-bottom:2px; color:var(--ink); }
+  .toast-title::before{ content:"> "; color:var(--ink-dim); }
+  .toast-body{ color:var(--ink-dim); word-break:break-word; }
 
-  /* ---------- preview modal (centered paper) ---------- */
   .modal{
-    position: fixed; inset:0; z-index: 9998;
-    background: rgba(0,0,0,.85);
-    display:none;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    backdrop-filter: blur(6px);
+    position:fixed; inset:0; z-index:9998;
+    background:rgba(0,0,0,.85); display:none;
+    align-items:center; justify-content:center;
+    padding:24px; backdrop-filter:blur(6px);
   }
   .modal.show{ display:flex; }
-
   .modal-card{
-    background: var(--panel);
-    border: 1px solid var(--line);
-    width: min(520px, 100%);
-    max-height: 92vh;
-    display:flex;
-    flex-direction: column;
-    box-shadow:
-      0 24px 80px rgba(0,0,0,.7),
-      0 0 0 1px rgba(255,30,30,.08),
-      0 0 60px rgba(255,30,30,.06);
+    background:var(--panel); border:1px solid var(--line);
+    width:min(520px,100%); max-height:92vh;
+    display:flex; flex-direction:column;
+    box-shadow: 0 24px 80px rgba(0,0,0,.7),
+                0 0 0 1px rgba(255,30,30,.08),
+                0 0 60px rgba(255,30,30,.06);
   }
   .modal-head{
-    padding: 13px 18px;
-    border-bottom: 1px solid var(--line-dim);
+    padding:13px 18px; border-bottom:1px solid var(--line-dim);
     display:flex; justify-content:space-between; align-items:center;
-    font-size: 11px; letter-spacing:.14em;
-    color: var(--ink-dim);
-    background: var(--panel-2);
+    font-size:11px; letter-spacing:.14em; color:var(--ink-dim);
+    background:var(--panel-2);
   }
   .modal-head .title{ display:flex; align-items:center; gap:8px; }
   .modal-head .title::before{
-    content:"";
-    width:6px; height:6px; border-radius:50%;
-    background: var(--red);
-    box-shadow: 0 0 8px 1px var(--red);
+    content:""; width:6px; height:6px; border-radius:50%;
+    background:var(--red); box-shadow:0 0 8px 1px var(--red);
   }
-
   .modal-body{
-    flex:1;
-    overflow:auto;
-    background: #0d0402;
-    padding: 28px 24px;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-    background-image:
-      radial-gradient(circle at 50% 0%, rgba(255,30,30,.05), transparent 60%);
+    flex:1; overflow-y:auto; overflow-x:hidden; background:#0d0402;
+    padding:28px 24px;
+    display:flex; justify-content:center; align-items:flex-start;
+    background-image: radial-gradient(circle at 50% 0%, rgba(255,30,30,.05), transparent 60%);
+    /* hide the scrollbar visually while keeping scroll functionality */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-
+  .modal-body::-webkit-scrollbar{ display:none; }
   .modal-body iframe{
-    width: 80mm;
-    min-width: 320px;
-    max-width: 100%;
-    height: 720px;
-    border: 0;
-    display:block;
-    background:#fff;
-    border-radius: 2px;
-    box-shadow:
-      0 0 0 1px rgba(0,0,0,.6),
-      0 18px 50px rgba(0,0,0,.75),
-      0 0 90px rgba(255,30,30,.08);
+    width:80mm; min-width:320px; max-width:100%;
+    height:720px;                 /* auto-adjusted after load */
+    border:0; display:block; background:#fff; border-radius:2px;
+    overflow:hidden;              /* belt-and-braces against inner scrollbars */
+    box-shadow: 0 0 0 1px rgba(0,0,0,.6),
+                0 18px 50px rgba(0,0,0,.75),
+                0 0 90px rgba(255,30,30,.08);
   }
 </style>
 </head>
 
 <body>
 
-<!-- decorative background -->
-<svg class="web-bg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+<svg class="web-bg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 100 100" preserveAspectRatio="none">
   <defs>
     <radialGradient id="fade" cx="0" cy="0" r="1">
       <stop offset="0%" stop-color="#3a1512" stop-opacity=".9"/>
       <stop offset="100%" stop-color="#3a1512" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <g stroke="url(#fade)" stroke-width="1" fill="none">
-    <line x1="0" y1="0" x2="420" y2="0"/>
-    <line x1="0" y1="0" x2="0" y2="420"/>
-    <line x1="0" y1="0" x2="300" y2="60"/>
-    <line x1="0" y1="0" x2="60" y2="300"/>
-    <line x1="0" y1="0" x2="200" y2="200"/>
-    <path d="M 40 0 Q 60 60 0 40" />
-    <path d="M 110 0 Q 140 140 0 110" />
-    <path d="M 200 0 Q 240 240 0 200" />
-    <path d="M 320 0 Q 360 360 0 320" />
+  <g stroke="url(#fade)" stroke-width="0.3" fill="none" vector-effect="non-scaling-stroke">
+    <line x1="0" y1="0" x2="42" y2="0"/>
+    <line x1="0" y1="0" x2="0"  y2="42"/>
+    <line x1="0" y1="0" x2="30" y2="6"/>
+    <line x1="0" y1="0" x2="6"  y2="30"/>
+    <line x1="0" y1="0" x2="20" y2="20"/>
+    <path d="M 4 0 Q 6 6 0 4" />
+    <path d="M 11 0 Q 14 14 0 11" />
+    <path d="M 20 0 Q 24 24 0 20" />
+    <path d="M 32 0 Q 36 36 0 32" />
   </g>
-  <g stroke="url(#fade)" stroke-width="1" fill="none" transform="translate(100%,100%) rotate(180)">
-    <line x1="0" y1="0" x2="420" y2="0"/>
-    <line x1="0" y1="0" x2="0" y2="420"/>
-    <line x1="0" y1="0" x2="300" y2="60"/>
-    <line x1="0" y1="0" x2="60" y2="300"/>
-    <line x1="0" y1="0" x2="200" y2="200"/>
-    <path d="M 40 0 Q 60 60 0 40" />
-    <path d="M 110 0 Q 140 140 0 110" />
-    <path d="M 200 0 Q 240 240 0 200" />
-    <path d="M 320 0 Q 360 360 0 320" />
+  <g stroke="url(#fade)" stroke-width="0.3" fill="none"
+     transform="translate(100,100) rotate(180)" vector-effect="non-scaling-stroke">
+    <line x1="0" y1="0" x2="42" y2="0"/>
+    <line x1="0" y1="0" x2="0"  y2="42"/>
+    <line x1="0" y1="0" x2="30" y2="6"/>
+    <line x1="0" y1="0" x2="6"  y2="30"/>
+    <line x1="0" y1="0" x2="20" y2="20"/>
+    <path d="M 4 0 Q 6 6 0 4" />
+    <path d="M 11 0 Q 14 14 0 11" />
+    <path d="M 20 0 Q 24 24 0 20" />
+    <path d="M 32 0 Q 36 36 0 32" />
   </g>
 </svg>
 <div class="scanlines"></div>
-
 <div id="toast-container"></div>
 
-<!-- preview modal -->
 <div id="preview-modal" class="modal" onclick="if(event.target===this) closePreview()">
   <div class="modal-card">
     <div class="modal-head">
@@ -357,13 +268,12 @@
       <button class="ghost tiny" onclick="closePreview()">✕ close</button>
     </div>
     <div class="modal-body">
-      <iframe id="preview-frame" title="Receipt preview"></iframe>
+      <iframe id="preview-frame" title="Receipt preview" scrolling="no"></iframe>
     </div>
   </div>
 </div>
 
 <div class="wrap">
-
   <header>
     <div class="rec"><span class="dot"></span> LIVE CONSOLE</div>
     <h1 class="glitch" data-text="QZ-TRAY-LEARN">
@@ -371,8 +281,7 @@
     </h1>
     <div class="subtitle">
       Silent 80mm receipt printing over QZ Tray. Every request is
-      <b>signed</b> server-side &mdash; no exposed keys, no popup after
-      the first handshake.
+      <b>signed</b> server-side &mdash; no exposed keys, no popup after the first handshake.
     </div>
   </header>
 
@@ -392,17 +301,13 @@
     <a href="https://qz.io/download/" target="_blank" rel="noopener">qz.io/download</a>,
     then see the README for generating a free signing certificate.
     <br><br>
-    Want a different receipt? Edit <b>receipt-template.js</b> —
-    business name, items, currency, logo toggle all live there.
-    <br><br>
-    Printing to <b>Microsoft Print to PDF</b> and getting a blank/A4 page?
-    Add an 80mm paper size once in Windows &mdash; instructions are in the README.
+    <b>Edit receipt-config.js</b> to change business, logo, items,
+    font sizes, printer density, and footer. Save, hard-refresh, print.
   </div>
-
 </div>
 
-<!-- receipt content lives here so it can be edited without touching this page -->
-<script src="/receipt-template.js"></script>
+<script src="receipt-config.js"></script>
+<script src="receipt-template.js"></script>
 
 <script>
 /* =========================================================
@@ -412,26 +317,17 @@ function showToast(type, title, message, timeoutMs) {
   const container = document.getElementById("toast-container");
   const el = document.createElement("div");
   el.className = "toast " + type;
-
   const body = document.createElement("div");
-
   const t = document.createElement("div");
-  t.className = "toast-title";
-  t.textContent = title;
+  t.className = "toast-title"; t.textContent = title;
   body.appendChild(t);
-
   if (message) {
     const m = document.createElement("div");
-    m.className = "toast-body";
-    m.textContent = message;
+    m.className = "toast-body"; m.textContent = message;
     body.appendChild(m);
   }
-
-  el.appendChild(body);
-  container.appendChild(el);
-
+  el.appendChild(body); container.appendChild(el);
   requestAnimationFrame(() => el.classList.add("show"));
-
   const life = timeoutMs || (type === "error" ? 7000 : 4000);
   setTimeout(() => {
     el.classList.remove("show");
@@ -447,9 +343,7 @@ qz.security.setCertificatePromise(function (resolve, reject) {
     .then(r => { if (!r.ok) throw new Error("Certificate could not be loaded"); return r.text(); })
     .then(resolve).catch(reject);
 });
-
 qz.security.setSignatureAlgorithm("SHA512");
-
 qz.security.setSignaturePromise(function (toSign) {
   return function (resolve, reject) {
     fetch("/sign-message?request=" + encodeURIComponent(toSign), { cache: "no-store" })
@@ -464,7 +358,6 @@ qz.security.setSignaturePromise(function (toSign) {
 async function connectQZ() {
   if (!qz.websocket.isActive()) await qz.websocket.connect();
 }
-
 async function checkConnection() {
   try {
     await connectQZ();
@@ -481,7 +374,6 @@ async function checkConnection() {
    ========================================================= */
 async function getPrinters() {
   const container = document.getElementById("printers");
-
   try {
     await connectQZ();
     const printers = await qz.printers.find();
@@ -495,9 +387,8 @@ async function getPrinters() {
     }
 
     printers.forEach(function (printer, index) {
-      const row = document.createElement("div");
+      const row  = document.createElement("div");
       row.className = "target";
-
       const info = document.createElement("div");
       const num  = document.createElement("span");
       num.className = "target-id";
@@ -505,48 +396,57 @@ async function getPrinters() {
       const name = document.createElement("span");
       name.className = "target-name";
       name.textContent = printer;
-
-      info.appendChild(num);
-      info.appendChild(name);
+      info.appendChild(num); info.appendChild(name);
 
       const btn = document.createElement("button");
       btn.className = "primary";
       btn.textContent = "print_80mm \u25B8";
       btn.addEventListener("click", () => print80mm(printer, btn));
 
-      row.appendChild(info);
-      row.appendChild(btn);
+      row.appendChild(info); row.appendChild(btn);
       container.appendChild(row);
     });
   } catch (error) {
     console.error(error);
-    container.innerHTML =
-      '<div class="empty-state">failed to enumerate printers — ' +
-      escapeHtml(error.toString()) + '</div>';
+    container.innerHTML = '<div class="empty-state">failed to enumerate printers — ' +
+                          String(error) + '</div>';
     showToast("error", "Failed to get printers", error.toString());
   }
 }
 
 /* =========================================================
-   LOGO (optional)
-   ========================================================= */
-async function getLogoBase64() {
-  try {
-    const r = await fetch("/logo-base64", { cache: "no-store" });
-    if (!r.ok) return null;
-    const text = await r.text();
-    return text || null;
-  } catch { return null; }
-}
-
-/* =========================================================
    PREVIEW
+   ---------------------------------------------------------
+   Now sizes the iframe to the receipt's real height so no
+   inner scrollbar appears — the modal-body scrolls instead,
+   and even that scrollbar is hidden via CSS.
    ========================================================= */
 async function previewReceipt() {
   try {
-    const logoBase64 = CONFIG.useLogo ? await getLogoBase64() : null;
-    const html = buildReceiptHtml("(preview)", logoBase64);
-    document.getElementById("preview-frame").srcdoc = html;
+    const html = window.buildReceiptHtml("(preview)", null);
+    const frame = document.getElementById("preview-frame");
+
+    /* load the receipt and wait for it to finish laying out */
+    await new Promise((resolve) => {
+      frame.onload = () => resolve();
+      frame.srcdoc = html;
+    });
+
+    /* give fonts a moment to settle */
+    await new Promise(r => setTimeout(r, 80));
+
+    try {
+      const doc = frame.contentDocument;
+      const h = Math.max(
+        doc.documentElement.scrollHeight,
+        doc.body ? doc.body.scrollHeight : 0
+      );
+      /* 720px is a good minimum so short receipts still look like paper */
+      frame.style.height = Math.max(720, h + 20) + "px";
+    } catch (e) {
+      frame.style.height = "720px";
+    }
+
     document.getElementById("preview-modal").classList.add("show");
   } catch (error) {
     console.error(error);
@@ -556,13 +456,77 @@ async function previewReceipt() {
 
 function closePreview() {
   document.getElementById("preview-modal").classList.remove("show");
-  document.getElementById("preview-frame").srcdoc = "";
+  const frame = document.getElementById("preview-frame");
+  frame.srcdoc = "";
+  frame.style.height = "720px";
 }
 
-/* esc to close */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePreview();
 });
+
+/* =========================================================
+   INLINE EXTERNAL IMAGES
+   ========================================================= */
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function inlineExternalImages(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const imgs = Array.from(doc.querySelectorAll("img"))
+    .filter(i => /^https?:/i.test(i.getAttribute("src") || ""));
+
+  await Promise.all(imgs.map(async (img) => {
+    const src = img.getAttribute("src");
+    try {
+      const r = await fetch(src, { mode: "cors", cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const b = await r.blob();
+      img.setAttribute("src", await blobToDataUrl(b));
+    } catch (e) {
+      console.warn("browser couldn't inline logo, leaving URL for QZ:", src);
+    }
+  }));
+
+  return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+}
+
+/* =========================================================
+   MEASURE RECEIPT HEIGHT
+   ---------------------------------------------------------
+   SAFETY = 20 mm gives the printer plenty of headroom for the
+   footer lines (returnPolicy + powered). Previously 4 mm, which
+   was why those lines were cut off.
+   ========================================================= */
+function measureReceiptHeightMm(html, widthMm) {
+  return new Promise((resolve) => {
+    const f = document.createElement("iframe");
+    f.style.cssText =
+      "position:fixed;left:-20000px;top:0;border:0;visibility:hidden;" +
+      "width:" + widthMm + "mm;height:10px;";
+    f.onload = () => {
+      try {
+        const doc = f.contentDocument;
+        const h = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body ? doc.body.scrollHeight : 0
+        );
+        /* +20 mm safety: font metrics in QZ's Java renderer can be
+           slightly taller than Chrome's, and the driver rounds up. */
+        resolve((h * 25.4 / 96) + 20);
+      } catch (e) { resolve(250); }
+      finally { f.remove(); }
+    };
+    f.srcdoc = html;
+    document.body.appendChild(f);
+  });
+}
 
 /* =========================================================
    PRINT 80mm
@@ -570,22 +534,28 @@ document.addEventListener("keydown", (e) => {
 async function print80mm(printerName, btn) {
   console.log("Print 80mm →", printerName);
   if (btn) btn.disabled = true;
-  showToast("info", "sending to printer…", printerName);
+  showToast("info", "rendering receipt…", printerName);
 
   try {
     await connectQZ();
-    const logoBase64 = CONFIG.useLogo ? await getLogoBase64() : null;
-    const html = buildReceiptHtml(printerName, logoBase64);
 
-    /* 80×297mm: the explicit height prevents a blank page on
-       Microsoft Print to PDF, which needs a concrete paper size. */
+    const P = (window.RECEIPT_CONFIG && window.RECEIPT_CONFIG.printer) || {};
+    const PRINTER_DENSITY = Number(P.density) || 203;
+    const WIDTH_MM        = Number(P.widthMm) || 72;
+
+    let html = window.buildReceiptHtml(printerName, null);
+    html = await inlineExternalImages(html);
+
+    const heightMm = await measureReceiptHeightMm(html, WIDTH_MM);
+    console.log("measured height:", heightMm.toFixed(1), "mm | width:", WIDTH_MM, "mm | density:", PRINTER_DENSITY);
+
     const config = qz.configs.create(printerName, {
-      size:         { width: 80, height: 297 },
-      units:        "mm",
-      margins:      0,
-      orientation:  "portrait",
-      colorType:    "blackwhite",
-      scaleContent: true
+      size:          { width: WIDTH_MM, height: heightMm },
+      units:         "mm",
+      margins:       0,
+      scaleContent:  true,
+      density:       PRINTER_DENSITY,
+      interpolation: "bicubic"
     });
 
     const data = [{
@@ -595,7 +565,8 @@ async function print80mm(printerName, btn) {
       data:   html
     }];
 
-    await qz.print(config, data);
+    const res = await qz.print(config, data);
+    console.log("qz.print resolved:", res);
     showToast("success", "sent to printer", printerName);
   } catch (error) {
     console.error("Print error:", error);
@@ -606,7 +577,7 @@ async function print80mm(printerName, btn) {
 }
 
 /* =========================================================
-   AUTO-CONNECT on page load
+   AUTO-CONNECT
    ========================================================= */
 window.addEventListener("load", function () {
   setTimeout(checkConnection, 300);
