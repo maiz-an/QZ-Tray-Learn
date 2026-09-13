@@ -411,19 +411,26 @@ backdrop to close it.
 
 Sends the current receipt or ticket to the printer assigned to it.
 
-What happens on the wire:
+What happens on the wire (with the default `printer.mode: "raw"`):
 
 1. The browser builds the HTML from `receipt-config.ts` via
    `buildReceiptHtml()` / `buildTicketHtml()`.
 2. Any remote images (like a logo URL) are fetched and inlined as `data:`
    URIs so the printer doesn't need network access.
-3. The HTML is measured in a hidden iframe to compute the physical page
-   height.
-4. QZ Tray asks the backend for a signature over the request.
-5. The backend signs with the private key and returns the base64
+3. QZ Tray asks the backend for a signature over the request.
+4. The backend signs with the private key and returns the base64
    signature.
-6. QZ Tray verifies it against the certificate, then hands the job to the
-   OS print spooler.
+5. QZ Tray verifies it against the certificate, renders the HTML itself,
+   converts it to ESC/POS raster commands (using
+   `printer.raw.quantization`/`threshold`/`dotDensity`), and — bypassing
+   the OS print driver entirely (`forceRaw: true`) — writes those bytes
+   straight to the printer.
+
+If a printer is switched to `printer.mode: "pixel"` instead (only for
+non-ESC/POS printers — see [Testing without a real printer](#testing-without-a-real-printer)),
+step 5 changes: the HTML is first measured in a hidden iframe to compute
+an explicit physical page height, then the job goes through the normal
+OS print driver/spooler instead.
 
 You'll see toast messages and console logs at each step.
 
@@ -435,8 +442,11 @@ You don't need a thermal printer to try this.
 
 ### Option 1 — Microsoft Print to PDF (Windows)
 
-Select **Microsoft Print to PDF** in the PRINTERS list, print a receipt or
-ticket, save the PDF, and open it.
+Microsoft Print to PDF doesn't speak ESC/POS, so it needs the fallback
+print path: set `printer.mode: "pixel"` in `receipt-config.ts` before
+testing with it (switch back to `"raw"` for your real thermal printers
+afterward). Then select **Microsoft Print to PDF** in the PRINTERS list,
+print a receipt or ticket, save the PDF, and open it.
 
 **One-time setup required** — Windows needs a custom paper size:
 
@@ -451,14 +461,16 @@ page with a tiny receipt in the top-left corner.
 
 ### Option 2 — Any network printer
 
-Send the job to any printer you have, even a laser printer. The 80mm
-layout will fit on the left side of an A4 page; useful for checking
-alignment and text quality.
+Same as above — a laser/inkjet printer needs `printer.mode: "pixel"`,
+since it can't interpret ESC/POS. Send the job to any printer you have;
+the 80mm layout will fit on the left side of an A4 page, useful for
+checking alignment and text quality.
 
 ### Option 3 — Just look at the preview
 
 `👁 preview` renders the exact HTML QZ will send, at real physical size. If
-it looks right there, it will look right on paper.
+it looks right there, it will look right on paper — and this one needs no
+mode switch either way, since the preview never goes through QZ at all.
 
 ---
 
@@ -492,30 +504,76 @@ lineItems: [
 ]
 ```
 
-**Printer settings** (shared by receipt + ticket):
+**Printer settings — this is the important one:**
 
 ```ts
 printer: {
-  density:  203,   // 203 for most 80mm thermals, 300 for higher-end units
-  widthMm:  80,    // full paper width
-  scale:    4,
-  threshold: 128
+  density:  203,     // 203 for most 80mm thermals, 300 for higher-end units
+  widthMm:  80,       // full paper width
+
+  mode: "raw",         // "raw" = talks straight to the printer's own
+                        // ESC/POS firmware, bypassing the OS driver —
+                        // this is what makes every printer print
+                        // identically. Leave this on "raw" for every
+                        // real thermal printer.
+
+  raw: {
+    language: "ESCPOS",
+    quantization: "luma",     // brightness-based black/white conversion
+    threshold: 128,            // 0–255 cutoff, lower = bolder/darker
+    dotDensity: "single",      // supported by every ESC/POS printer;
+                                // "double" is sharper but not guaranteed
+                                // on cheaper/older clones
+    imageEncoding: "gs_v_0",   // modern raster command, avoids banding
+    forceRaw: true              // bypass the OS driver entirely
+  },
+
+  pixel: {
+    // Fallback only — used when printer.mode is switched to "pixel"
+    // for a printer that does NOT speak ESC/POS (a laser/inkjet
+    // printer, or "Microsoft Print to PDF" for quick local testing).
+    colorType: "blackwhite",
+    interpolation: "nearest-neighbor"
+  }
 }
 ```
 
-**Paper dead-zones (margin from physical paper edges):**
+**Why "raw" and not the old driver-based printing?** Printing through
+`pixel`/HTML rendering means every printer's Windows/macOS *driver* gets
+to reinterpret spacing, margins and black/white conversion its own way —
+which is exactly why the same receipt can come out looking different
+(more spacing, faded fills, blurry text, a clipped edge) on different
+printer models, even with identical config. `raw` + ESC/POS sidesteps
+drivers completely: QZ renders the HTML once, converts it to ESC/POS
+raster commands itself, and (with `forceRaw: true`) writes those bytes
+straight to the printer. Virtually every 80mm thermal/kitchen printer
+(Epson, Star, Xprinter, Rongta, Citizen, generic clones...) implements
+ESC/POS the same way, so the same bytes print the same way everywhere.
+
+Only switch a printer to `mode: "pixel"` if it genuinely isn't an
+ESC/POS printer — e.g. you're pointing it at "Microsoft Print to PDF"
+just to sanity-check a layout, or at a regular office laser printer.
+Real receipt/kitchen thermal printers should stay on `"raw"`.
+
+**Paper margins (safe-print zone):**
 
 ```ts
 style: {
-  pageWidth:      "76mm",   // total content width
-  paddingLeftMm:  "0mm",    // left driver dead-zone
-  paddingRightMm: "4mm"     // right driver dead-zone
+  pageWidth:      "72mm",   // content width
+  paddingLeftMm:  "4mm",    // left safety margin
+  paddingRightMm: "4mm"     // right safety margin
 }
 ```
 
-If the receipt is clipped on the right, increase `paddingRightMm`. If it's
-clipped on the left, increase `paddingLeftMm` — but keep `pageWidth` equal
-to `printer.widthMm` or QZ will scale everything.
+80mm thermal paper has a physically printable width of about **72mm** on
+virtually every 80mm/203dpi printhead — the outer ~4mm on *each* edge
+can't be marked no matter the brand or driver. Centering exactly 72mm of
+content with a symmetric 4mm margin means nothing ever gets clipped,
+regardless of which side a given printer's unprintable margin happens to
+fall on. Don't widen `pageWidth` past 72mm — that's the one number that's
+safe across every printer, not just the one on your desk. (The `ticket`
+block below has its own identical `style.pageWidth` / padding — keep both
+in sync if you ever change one.)
 
 **Bilingual content:** set `locale.showArabic: false` to hide all Arabic
 text (useful if your printer's font engine can't shape Arabic script).
@@ -615,23 +673,34 @@ it's running against the local Express server or against Vercel.
 - `inlineExternalImages()` — rewrites `<img src="https://…">` tags in the
   HTML into `data:` URIs before printing, so the printer doesn't need
   network access for a logo.
-- `measureReceiptHeightMm()` — renders the HTML in a hidden, off-screen
-  iframe to measure its real height in millimeters, so the printed page
-  size matches the content exactly (no wasted paper).
-- `printHtml()` — the full pipeline: inline images → measure height →
-  build a QZ `pixel`/`html` config → `qz.print()`.
+- `printHtml()` — the print pipeline, branching on `printer.mode`:
+  - **`"raw"` (default, every real thermal printer)** — sends
+    `{ type: "raw", format: "html", options: { language: "ESCPOS", ... } }`.
+    QZ renders the HTML, converts it to ESC/POS raster commands using
+    `quantization`/`threshold` from config, and (`forceRaw: true`) writes
+    those bytes straight to the printer — the OS driver never touches
+    the content, so output is identical across printer brands/drivers.
+    No manual height calculation needed here: ESC/POS raster just prints
+    until the content ends, so QZ auto-sizes the height to the real
+    content (`pageHeight` is intentionally left unset).
+  - **`"pixel"` (fallback, non-ESC/POS printers only)** — the old
+    driver-based path: `measureReceiptHeightMm()` renders the HTML in a
+    hidden off-screen iframe to estimate the physical height, then
+    `{ type: "pixel", format: "html" }` is sent with that explicit
+    `size`. This is what "Microsoft Print to PDF" or a regular
+    laser/inkjet printer needs, since they can't interpret ESC/POS.
 - `withPreviewCentering()` — injects a small `<style>` override used only
-  by the on-screen preview so short receipts look centered; the actual
-  printed version relies on the printer's own dead-zone padding instead.
+  by the on-screen preview so short receipts look centered; both print
+  paths above rely on the printer's own safe-margin padding instead.
 
 ### `src/components/PreviewModal.tsx` — the live preview
 
 Renders the receipt/ticket HTML inside a `srcDoc` iframe sized to its real
 physical width and auto-measured full height (via `ResizeObserver` +
-several delayed re-measurements for fonts/images). The modal caps at
-`92vh`; its inner preview area scrolls both vertically and horizontally
-(`overflow-auto`) so the content is always shown at true size — never
-shrunk to fit — however tall or wide it ends up being.
+several delayed re-measurements for fonts/images). The modal card caps at
+`92vh` and its body scrolls vertically (`overflow-y-auto`) when the
+receipt is taller than that — content is centered and always shown at
+its true, real width, never shrunk to fit.
 
 ### `src/hooks/useQz.ts` — React state around the QZ pipeline
 
@@ -694,36 +763,63 @@ show. Install at least one (Microsoft Print to PDF is enough to test).
 Windows' built-in PDF driver needs a custom paper size registered once.
 See [Testing without a real printer](#testing-without-a-real-printer).
 
+### The same receipt prints differently on different printers
+
+This is what `printer.mode: "raw"` fixes — see
+[Common changes → Printer settings](#common-changes) above. If you're
+still seeing this:
+
+1. Confirm the printer is actually staying on `mode: "raw"` — check
+   `receipt-config.ts`. Every real 80mm thermal/kitchen printer should
+   use `"raw"`; only a non-ESC/POS printer (a laser printer, or
+   "Microsoft Print to PDF") needs `"pixel"`.
+2. Confirm the printer genuinely speaks ESC/POS — check its spec sheet
+   or manual. The overwhelming majority of 80mm thermal receipt/kitchen
+   printers do (Epson, Star, Xprinter, Rongta, Citizen, and most
+   generic/clone printers). A handful of older or specialty models use
+   a different language (`"ZPL"`, `"EPL"`, `"CPCL"`) — set
+   `printer.raw.language` accordingly for that printer if so.
+3. If a specific printer's driver still doesn't cooperate even with
+   `forceRaw: true`, try installing it under Windows' generic
+   **"Generic / Text Only"** driver instead of its bundled driver —
+   raw/ESC-POS commands don't need a smart driver, just a pass-through.
+
 ### Receipt/ticket is cut off on the right side
 
-The printer's physical dead zone on the right is larger than expected.
-Increase `paddingRightMm` in `receipt-config.ts` by 1–2mm:
+Content is already set to the safe, universal 72mm-centered-in-80mm zone
+(see [Printer settings](#common-changes)) — that should never clip on a
+genuine 80mm printer. If it still does, that printer's physical print
+head is narrower than the 72mm standard (unusual, but some cheaper units
+run 68–70mm). Narrow `style.pageWidth` (and the matching `ticket.style`
+block) by 1–2mm and keep the left/right padding symmetric:
 
 ```ts
 style: {
-  paddingRightMm: "5mm"    // was "4mm"
+  pageWidth:      "70mm",   // was "72mm"
+  paddingLeftMm:  "5mm",    // was "4mm"
+  paddingRightMm: "5mm"     // was "4mm"
 }
 ```
-
-Keep `pageWidth` and `printer.widthMm` at the same value or QZ will scale
-the whole job.
 
 ### Preview looks squashed / hard to read
 
 The preview modal always renders the receipt/ticket at its real physical
-width and scrolls (both directions) instead of shrinking it — if it still
-looks compressed, hard-refresh the page (the running app may be serving a
+width and scrolls vertically instead of shrinking it — if it still looks
+compressed, hard-refresh the page (the running app may be serving a
 stale `dist/` build; run `npm run build` again, or use `npm run dev`).
 
 ### Receipt looks faded or "light"
 
-Thermal printers have a physical darkness setting:
+With `printer.mode: "raw"`, darkness is controlled entirely by the
+printer's own hardware, not the app — the ESC/POS bytes it receives are
+already pure black/white (`quantization: "luma"`, `threshold: 128`):
 
 1. **Printer firmware** — most 80mm thermals have a paper feed / density
    button combo or a config tool from the manufacturer. Increase darkness
    by one or two steps.
-2. **Driver settings** — Windows → Devices and Printers → your printer →
-   Printing Preferences → look for a "Density" or "Darkness" option.
+2. **Lower `printer.raw.threshold`** in `receipt-config.ts` (e.g. `100`)
+   to make more pixels count as black — use this if the receipt looks
+   consistently light across every printer, not just one.
 
 The HTML output itself is already bold (weights 700–900 throughout).
 

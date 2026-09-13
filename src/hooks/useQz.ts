@@ -7,6 +7,7 @@ import {
   printHtml
 } from "@/lib/qz";
 import { sleep } from "@/lib/utils";
+import type { PrinterConfig } from "@/config/types";
 import type { ToastType } from "./useToast";
 
 export type QzStatus = "idle" | "connecting" | "connected" | "error";
@@ -27,8 +28,7 @@ export interface UseQzResult {
   print: (args: {
     printerName: string;
     html: string;
-    density: number;
-    widthMm: number;
+    printer: PrinterConfig;
     label: string;
   }) => Promise<void>;
 }
@@ -92,14 +92,12 @@ export function useQz(showToast: ShowToast): UseQzResult {
     async ({
       printerName,
       html,
-      density,
-      widthMm,
+      printer,
       label
     }: {
       printerName: string;
       html: string;
-      density: number;
-      widthMm: number;
+      printer: PrinterConfig;
       label: string;
     }) => {
       if (!printerName) {
@@ -115,7 +113,7 @@ export function useQz(showToast: ShowToast): UseQzResult {
 
       try {
         await connectQz();
-        await printHtml({ printerName, html, density, widthMm });
+        await printHtml({ printerName, html, printer });
         showToast("success", `${label} sent`, printerName);
       } catch (err) {
         console.error(label + " error:", err);

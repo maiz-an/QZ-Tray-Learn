@@ -17,8 +17,27 @@ export const receiptConfig: ReceiptConfig = {
   printer: {
     density: 203,
     widthMm: 80,
-    scale: 4,
-    threshold: 128
+
+    /* See PrinterConfig in types.ts for the full explanation. Short
+       version: "raw" bypasses printer drivers entirely and is what
+       makes every printer print identically. Only switch to "pixel"
+       for a non-ESC/POS printer (e.g. testing with
+       "Microsoft Print to PDF"). */
+    mode: "raw",
+
+    raw: {
+      language: "ESCPOS",
+      quantization: "luma",
+      threshold: 128,
+      dotDensity: "single",
+      imageEncoding: "gs_v_0",
+      forceRaw: true
+    },
+
+    pixel: {
+      colorType: "blackwhite",
+      interpolation: "nearest-neighbor"
+    }
   },
 
   business: {
@@ -57,8 +76,18 @@ export const receiptConfig: ReceiptConfig = {
     baseSize: "9.5pt",
     lineHeight: "1.4",
 
-    pageWidth: "76mm",
-    paddingLeftMm: "0mm",
+    /*
+     * 72mm content inside an 80mm page (4mm symmetric margin each
+     * side). 72mm is the actual printable width on virtually every
+     * 80mm/203dpi thermal printhead — the paper is 80mm but the
+     * print head itself physically cannot mark the outer ~4mm on
+     * either edge. Using exactly 72mm, centered, means nothing ever
+     * gets clipped no matter which side a given printer's unusable
+     * margin falls on — this is what fixes "right side hidden" on
+     * some printers and "too much blank space" on others.
+     */
+    pageWidth: "72mm",
+    paddingLeftMm: "4mm",
     paddingRightMm: "4mm",
     topPadding: "4mm",
     bottomPadding: "5mm",
@@ -194,8 +223,10 @@ export const receiptConfig: ReceiptConfig = {
     notes: "",
 
     style: {
-      pageWidth: "76mm",
-      paddingLeftMm: "0mm",
+      /* Same 72mm-centered-in-80mm rule as the receipt style above —
+         see the comment there. Keep both in sync. */
+      pageWidth: "72mm",
+      paddingLeftMm: "4mm",
       paddingRightMm: "4mm",
       topPadding: "5mm",
       bottomPadding: "5mm",

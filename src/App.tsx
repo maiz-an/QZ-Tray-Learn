@@ -85,8 +85,7 @@ export default function App() {
     await print({
       printerName: receiptPrinter,
       html,
-      density: receiptConfig.printer.density,
-      widthMm: receiptConfig.printer.widthMm,
+      printer: receiptConfig.printer,
       label: "checkout receipt"
     });
   }, [print, receiptPrinter]);
@@ -96,8 +95,7 @@ export default function App() {
     await print({
       printerName: receiptPrinter,
       html,
-      density: receiptConfig.printer.density,
-      widthMm: receiptConfig.printer.widthMm,
+      printer: receiptConfig.printer,
       label: "order receipt"
     });
   }, [print, receiptPrinter]);
@@ -107,8 +105,7 @@ export default function App() {
     await print({
       printerName: ticketPrinter,
       html,
-      density: receiptConfig.printer.density,
-      widthMm: receiptConfig.printer.widthMm,
+      printer: receiptConfig.printer,
       label: "preparation receipt"
     });
   }, [print, ticketPrinter]);
@@ -118,8 +115,7 @@ export default function App() {
     await print({
       printerName: ticketPrinter,
       html,
-      density: receiptConfig.printer.density,
-      widthMm: receiptConfig.printer.widthMm,
+      printer: receiptConfig.printer,
       label: "cancellation receipt"
     });
   }, [print, ticketPrinter]);

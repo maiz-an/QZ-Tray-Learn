@@ -1,4 +1,5 @@
 import type { QzGlobal } from "@/types/qz";
+import type { PrinterConfig } from "@/config/types";
 
 declare global {
   interface Window {
@@ -174,30 +175,73 @@ export function measureReceiptHeightMm(html: string, widthMm: number): Promise<n
 export interface PrintOptions {
   printerName: string;
   html: string;
-  density: number;
-  widthMm: number;
+  printer: PrinterConfig;
 }
 
 export async function printHtml({
   printerName,
   html,
-  density,
-  widthMm
+  printer
 }: PrintOptions): Promise<void> {
   const qz = getQz();
   const inlined = await inlineExternalImages(html);
-  const heightMm = await measureReceiptHeightMm(inlined, widthMm);
 
+  if (printer.mode === "pixel") {
+    /* -----------------------------------------------------------
+     * PIXEL fallback — renders via the OS printer driver. Only used
+     * for non-ESC/POS printers (see PrinterConfig.mode). Since the
+     * driver does its own layout, we still have to measure and
+     * declare an explicit page height ourselves.
+     * ----------------------------------------------------------- */
+    const heightMm = await measureReceiptHeightMm(inlined, printer.widthMm);
+
+    const config = qz.configs.create(printerName, {
+      size: { width: printer.widthMm, height: heightMm },
+      units: "mm",
+      margins: 0,
+      density: printer.density,
+      colorType: printer.pixel.colorType,
+      interpolation: printer.pixel.interpolation
+    });
+
+    const data = [
+      { type: "pixel", format: "html", flavor: "plain", data: inlined }
+    ];
+
+    await qz.print(config, data);
+    return;
+  }
+
+  /* -----------------------------------------------------------
+   * RAW (default) — QZ renders the HTML once, converts it to
+   * ESC/POS raster commands itself using `quantization`/`threshold`,
+   * and (with forceRaw) writes those bytes straight to the printer,
+   * bypassing the OS driver entirely. No manual height measurement
+   * needed — ESC/POS raster prints continue until the content ends,
+   * so QZ auto-sizes the height to the real content.
+   * ----------------------------------------------------------- */
   const config = qz.configs.create(printerName, {
-    size: { width: widthMm, height: heightMm },
     units: "mm",
-    margins: 0,
-    density,
-    interpolation: "bicubic"
+    density: printer.density,
+    forceRaw: printer.raw.forceRaw
   });
 
   const data = [
-    { type: "pixel", format: "html", flavor: "plain", data: inlined }
+    {
+      type: "raw",
+      format: "html",
+      flavor: "plain",
+      data: inlined,
+      options: {
+        language: printer.raw.language,
+        quantization: printer.raw.quantization,
+        threshold: printer.raw.threshold,
+        dotDensity: printer.raw.dotDensity,
+        imageEncoding: printer.raw.imageEncoding,
+        pageWidth: printer.widthMm
+        // pageHeight intentionally omitted — auto-sized to content.
+      }
+    }
   ];
 
   await qz.print(config, data);
